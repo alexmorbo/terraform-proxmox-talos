@@ -147,3 +147,42 @@ resource "local_file" "talosconfig" {
     current-context = var.cluster_name
   })
 }
+
+resource "local_file" "kubeconfig" {
+  count = var.create_kubeconfig_file ? 1 : 0
+
+  filename = pathexpand(
+    replace(var.kubeconfig_file_template, "__CLUSTER__", var.cluster_name)
+  )
+  content = yamlencode({
+    apiVersion = "v1"
+    kind       = "Config"
+    clusters = [
+      {
+        name = var.cluster_name
+        cluster = {
+          certificate-authority-data = talos_cluster_kubeconfig.this.kubernetes_client_configuration.ca_certificate
+          server                     = talos_cluster_kubeconfig.this.kubernetes_client_configuration.host
+        }
+      }
+    ]
+    contexts = [
+      {
+        name = var.cluster_name
+        context = {
+          cluster = var.cluster_name
+          user    = var.cluster_name
+        }
+      }
+    ]
+    users = [
+      {
+        name = var.cluster_name
+        user = {
+          client-certificate-data = talos_cluster_kubeconfig.this.kubernetes_client_configuration.client_certificate
+          client-key-data         = talos_cluster_kubeconfig.this.kubernetes_client_configuration.client_key
+        }
+      }
+    ]
+  })
+}

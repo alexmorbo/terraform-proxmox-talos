@@ -27,6 +27,7 @@
 
 | Name | Type |
 |------|------|
+| [local_file.kubeconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [local_file.talosconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [proxmox_virtual_environment_download_file.talos_image](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_download_file) | resource |
 | [talos_cluster_kubeconfig.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/resources/cluster_kubeconfig) | resource |
@@ -45,9 +46,11 @@
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | The name of the Talos cluster. | `string` | n/a | yes |
 | <a name="input_cluster_vip"></a> [cluster\_vip](#input\_cluster\_vip) | The virtual IP (VIP) address for the cluster, typically used for load balancing or high availability setups. | `string` | n/a | yes |
 | <a name="input_controlplanes"></a> [controlplanes](#input\_controlplanes) | Configuration of control plane nodes, including the number of nodes, resources (CPU, RAM), and network configuration. | <pre>map(object({<br/>    count  = number<br/>    socket = optional(number, 1)<br/>    cpu    = optional(number, 4)<br/>    ram    = optional(number, 8192)<br/>    networks = list(object({<br/>      interface = string<br/>      bridge    = string<br/>      tag       = number<br/>      model     = optional(string, "virtio")<br/>      address   = optional(string, null)<br/>    }))<br/>  }))</pre> | n/a | yes |
-| <a name="input_create_talosconfig_file"></a> [create\_talosconfig\_file](#input\_create\_talosconfig\_file) | Flag to determine whether a local Talos configuration file (~/.talos/config) should be created. If set to true, a local\_file resource will be generated with the appropriate content. | `bool` | `false` | no |
+| <a name="input_create_kubeconfig_file"></a> [create\_kubeconfig\_file](#input\_create\_kubeconfig\_file) | Flag to determine whether a local kubernetes configuration file should be created. If set to true, a local\_file resource will be generated with the appropriate content. | `bool` | `false` | no |
+| <a name="input_create_talosconfig_file"></a> [create\_talosconfig\_file](#input\_create\_talosconfig\_file) | Flag to determine whether a local Talos configuration file should be created. If set to true, a local\_file resource will be generated with the appropriate content. | `bool` | `false` | no |
 | <a name="input_default_gateway"></a> [default\_gateway](#input\_default\_gateway) | The default gateway for the cluster nodes, used for routing external traffic. | `string` | n/a | yes |
 | <a name="input_dns"></a> [dns](#input\_dns) | A set of DNS server addresses to be used by the cluster nodes. Default includes Cloudflare and Google DNS. | `set(string)` | <pre>[<br/>  "1.1.1.1",<br/>  "8.8.8.8"<br/>]</pre> | no |
+| <a name="input_kubeconfig_file_template"></a> [kubeconfig\_file\_template](#input\_kubeconfig\_file\_template) | Template path for the kubeconfig file, where '\_\_CLUSTER\_\_' will be replaced by the cluster name. | `string` | `"~/.kube/configs/__CLUSTER__.yaml"` | no |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | The desired version of Kubernetes to be installed in the cluster. | `string` | n/a | yes |
 | <a name="input_pod_subnet"></a> [pod\_subnet](#input\_pod\_subnet) | The subnet for Kubernetes pods, defining the IP range for pod networking. | `string` | n/a | yes |
 | <a name="input_proxmox_cluster"></a> [proxmox\_cluster](#input\_proxmox\_cluster) | Proxmox cluster configuration, including the cluster name and the datastore associated with each node. | <pre>object({<br/>    cluster_name = string<br/>    nodes = map(object({<br/>      datastore = string<br/>    }))<br/>  })</pre> | n/a | yes |

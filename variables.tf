@@ -129,7 +129,7 @@ variable "cluster_vip" {
 
 variable "create_talosconfig_file" {
   type        = bool
-  description = "Flag to determine whether a local Talos configuration file (~/.talos/config) should be created. If set to true, a local_file resource will be generated with the appropriate content."
+  description = "Flag to determine whether a local Talos configuration file should be created. If set to true, a local_file resource will be generated with the appropriate content."
   default     = false
 }
 
@@ -137,4 +137,16 @@ variable "talosconfig_file_name" {
   type        = string
   description = "The path and filename for the generated Talos configuration file. Defaults to ~/.talos/config."
   default     = "~/.talos/config"
+}
+
+variable "create_kubeconfig_file" {
+  type        = bool
+  description = "Flag to determine whether a local kubernetes configuration file should be created. If set to true, a local_file resource will be generated with the appropriate content."
+  default     = false
+}
+
+variable "kubeconfig_file_template" {
+  type        = string
+  description = "Template path for the kubeconfig file, where '__CLUSTER__' will be replaced by the cluster name."
+  default     = "~/.kube/configs/__CLUSTER__.yaml"
 }
