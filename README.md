@@ -1,3 +1,155 @@
+# About
+
+Terraform module to provision Talos Linux-based Kubernetes clusters on Proxmox Virtual Environment (PVE). Handles VM creation, Talos image deployment, cluster bootstrapping, and client configuration setup.
+
+## Features
+
+- Deploys Kubernetes clusters based on Talos Linux
+- Supports both control plane and worker nodes
+- Downloads and provisions Talos images into Proxmox
+- Optional creation of kubeconfig and talosconfig files locally
+- Modular and customizable node group definitions
+
+## Quick Start
+
+```hcl
+module "talos_cluster" {
+  source        = "github.com/alexmorbo/terraform-proxmox-talos"
+  cluster_name  = "mycluster"
+  talos_cp_version = "1.10.0"
+  talos_schematic = [
+    "siderolabs/i915",
+    "siderolabs/qemu-guest-agent",
+  ]
+
+  default_gateway = "10.90.12.1"
+  cluster_vip     = "10.90.12.11"
+
+  vm_subnet      = "10.90.12.0/24"
+  pod_subnet     = "10.209.0.0/16"
+  service_subnet = "10.208.0.0/16"
+
+  proxmox_cluster = {
+    cluster_name = "homelab"
+    nodes = {
+      node-1 = {
+        datastore = "local-lvm"
+      }
+      node-2 = {
+        datastore = "local-lvm"
+      }
+      node-3 = {
+        datastore = "local-lvm"
+      }
+    }
+  }
+
+  controlplanes = {
+    node-1 = {
+      count = 1
+      networks = [
+        {
+          interface = "eth0"
+          bridge    = "vmbr0"
+        },
+      ]
+    }
+    node-2 = {
+      count = 1
+      networks = [
+        {
+          interface = "eth0"
+          bridge    = "vmbr0"
+        },
+      ]
+    }
+    node-3 = {
+      count = 1
+      networks = [
+        {
+          interface = "eth0"
+          bridge    = "vmbr0"
+        },
+      ]
+    }
+  }
+
+  workers = {
+    node-1 = {
+      ingress = {
+        count = 1
+        cpu   = 2
+        ram   = 4096
+        networks = [
+          {
+            interface = "eth0"
+            bridge    = "vmbr0"
+          },
+        ]
+      }
+      default = {
+        count = 2
+        networks = [
+          {
+            interface = "eth0"
+            bridge    = "vmbr0"
+          },
+        ]
+      }
+    }
+    node-2 = {
+      ingress = {
+        count = 1
+        cpu   = 2
+        ram   = 4096
+        networks = [
+          {
+            interface = "eth0"
+            bridge    = "vmbr0"
+          },
+        ]
+      }
+      default = {
+        count = 1
+        networks = [
+          {
+            interface = "eth0"
+            bridge    = "vmbr0"
+          },
+        ]
+      }
+    }
+    node-2 = {
+      ingress = {
+        count = 1
+        cpu   = 2
+        ram   = 4096
+        networks = [
+          {
+            interface = "eth0"
+            bridge    = "vmbr0"
+          },
+        ]
+      }
+    }
+  }
+}
+```
+
+## Module Structure
+
+- `modules/node_group/` – reusable logic for control plane and worker nodes
+- `images.tf` – Talos image downloading and provisioning
+- `talos.tf` – Talos client and machine configurations
+- `virtual_machines.tf` – VM creation logic for Proxmox
+- `files.tf` – optional local configuration file generation
+
+## Notes
+
+- Tested with Proxmox VE 8.2
+- Requires a user with access to upload ISO/images and manage VMs
+- Make sure to enable Talos provider by setting environment variables or credentials
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -51,7 +203,7 @@
 | <a name="input_default_gateway"></a> [default\_gateway](#input\_default\_gateway) | The default gateway for the cluster nodes, used for routing external traffic. | `string` | n/a | yes |
 | <a name="input_dns"></a> [dns](#input\_dns) | A set of DNS server addresses to be used by the cluster nodes. Default includes Cloudflare and Google DNS. | `set(string)` | <pre>[<br/>  "1.1.1.1",<br/>  "8.8.8.8"<br/>]</pre> | no |
 | <a name="input_kubeconfig_file_template"></a> [kubeconfig\_file\_template](#input\_kubeconfig\_file\_template) | Template path for the kubeconfig file, where '\_\_CLUSTER\_\_' will be replaced by the cluster name. | `string` | `"~/.kube/configs/__CLUSTER__.yaml"` | no |
-| <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | The desired version of Kubernetes to be installed in the cluster. | `string` | n/a | yes |
+| <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | The desired version of Kubernetes to be installed in the cluster. | `string` | `"1.33.0"` | no |
 | <a name="input_pod_subnet"></a> [pod\_subnet](#input\_pod\_subnet) | The subnet for Kubernetes pods, defining the IP range for pod networking. | `string` | n/a | yes |
 | <a name="input_proxmox_cluster"></a> [proxmox\_cluster](#input\_proxmox\_cluster) | Proxmox cluster configuration, including the cluster name and the datastore associated with each node. | <pre>object({<br/>    cluster_name = string<br/>    nodes = map(object({<br/>      datastore = string<br/>    }))<br/>  })</pre> | n/a | yes |
 | <a name="input_service_subnet"></a> [service\_subnet](#input\_service\_subnet) | The subnet for Kubernetes services, defining the IP range for internal cluster services. | `string` | n/a | yes |

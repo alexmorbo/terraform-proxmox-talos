@@ -6,6 +6,8 @@ variable "cluster_name" {
 variable "kubernetes_version" {
   type        = string
   description = "The desired version of Kubernetes to be installed in the cluster."
+
+  default = "1.33.0"
 }
 
 variable "talos_cp_version" {
