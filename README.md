@@ -4,6 +4,7 @@
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
+| <a name="requirement_local"></a> [local](#requirement\_local) | ~> 2.5.2 |
 | <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.76.1 |
 | <a name="requirement_talos"></a> [talos](#requirement\_talos) | 0.8.0-alpha.0 |
 
@@ -11,6 +12,7 @@
 
 | Name | Version |
 |------|---------|
+| <a name="provider_local"></a> [local](#provider\_local) | 2.5.2 |
 | <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.76.1 |
 | <a name="provider_talos"></a> [talos](#provider\_talos) | 0.8.0-alpha.0 |
 
@@ -25,6 +27,7 @@
 
 | Name | Type |
 |------|------|
+| [local_file.talosconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [proxmox_virtual_environment_download_file.talos_image](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_download_file) | resource |
 | [talos_cluster_kubeconfig.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/resources/cluster_kubeconfig) | resource |
 | [talos_image_factory_schematic.version](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/resources/image_factory_schematic) | resource |
@@ -42,6 +45,7 @@
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | The name of the Talos cluster. | `string` | n/a | yes |
 | <a name="input_cluster_vip"></a> [cluster\_vip](#input\_cluster\_vip) | The virtual IP (VIP) address for the cluster, typically used for load balancing or high availability setups. | `string` | n/a | yes |
 | <a name="input_controlplanes"></a> [controlplanes](#input\_controlplanes) | Configuration of control plane nodes, including the number of nodes, resources (CPU, RAM), and network configuration. | <pre>map(object({<br/>    count  = number<br/>    socket = optional(number, 1)<br/>    cpu    = optional(number, 4)<br/>    ram    = optional(number, 8192)<br/>    networks = list(object({<br/>      interface = string<br/>      bridge    = string<br/>      tag       = number<br/>      model     = optional(string, "virtio")<br/>      address   = optional(string, null)<br/>    }))<br/>  }))</pre> | n/a | yes |
+| <a name="input_create_talosconfig_file"></a> [create\_talosconfig\_file](#input\_create\_talosconfig\_file) | Flag to determine whether a local Talos configuration file (~/.talos/config) should be created. If set to true, a local\_file resource will be generated with the appropriate content. | `bool` | `false` | no |
 | <a name="input_default_gateway"></a> [default\_gateway](#input\_default\_gateway) | The default gateway for the cluster nodes, used for routing external traffic. | `string` | n/a | yes |
 | <a name="input_dns"></a> [dns](#input\_dns) | A set of DNS server addresses to be used by the cluster nodes. Default includes Cloudflare and Google DNS. | `set(string)` | <pre>[<br/>  "1.1.1.1",<br/>  "8.8.8.8"<br/>]</pre> | no |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | The desired version of Kubernetes to be installed in the cluster. | `string` | n/a | yes |
@@ -54,6 +58,7 @@
 | <a name="input_talos_factory_url"></a> [talos\_factory\_url](#input\_talos\_factory\_url) | The URL of the Talos factory, used for managing node images and configurations. | `string` | `"https://factory.talos.dev"` | no |
 | <a name="input_talos_platform"></a> [talos\_platform](#input\_talos\_platform) | The platform type for Talos, typically used to define how nodes are provisioned (e.g., nocloud, vmware, etc.). | `string` | `"nocloud"` | no |
 | <a name="input_talos_schematic"></a> [talos\_schematic](#input\_talos\_schematic) | A set of Talos configuration files or schematics to apply during the cluster setup. | `set(string)` | n/a | yes |
+| <a name="input_talosconfig_file_name"></a> [talosconfig\_file\_name](#input\_talosconfig\_file\_name) | The path and filename for the generated Talos configuration file. Defaults to ~/.talos/config. | `string` | `"~/.talos/config"` | no |
 | <a name="input_vm_subnet"></a> [vm\_subnet](#input\_vm\_subnet) | The subnet for the virtual machines in the cluster. | `string` | n/a | yes |
 | <a name="input_workers"></a> [workers](#input\_workers) | Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details. | <pre>map(map(object({<br/>    count                = number<br/>    talos_version        = optional(string)<br/>    talos_version_update = optional(string)<br/>    kubernetes_version   = optional(string)<br/>    socket               = optional(number, 1)<br/>    cpu                  = optional(number, 4)<br/>    ram                  = optional(number, 8192)<br/>    networks = list(object({<br/>      bridge    = string<br/>      tag       = number<br/>      interface = string<br/>      model     = optional(string, "virtio")<br/>      address   = optional(string, null)<br/>    }))<br/>  })))</pre> | `{}` | no |
 

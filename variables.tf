@@ -126,3 +126,15 @@ variable "cluster_vip" {
   type        = string
   description = "The virtual IP (VIP) address for the cluster, typically used for load balancing or high availability setups."
 }
+
+variable "create_talosconfig_file" {
+  type        = bool
+  description = "Flag to determine whether a local Talos configuration file (~/.talos/config) should be created. If set to true, a local_file resource will be generated with the appropriate content."
+  default     = false
+}
+
+variable "talosconfig_file_name" {
+  type        = string
+  description = "The path and filename for the generated Talos configuration file. Defaults to ~/.talos/config."
+  default     = "~/.talos/config"
+}
