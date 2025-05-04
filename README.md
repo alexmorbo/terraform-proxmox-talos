@@ -1,5 +1,7 @@
 # About
 
+[![GitHub Release](https://img.shields.io/github/v/release/alexmorbo/terraform-proxmox-talos)](https://github.com/alexmorbo/terraform-proxmox-talos/releases) [![GitHub](https://img.shields.io/github/license/alexmorbo/terraform-proxmox-talos)](https://github.com/alexmorbo/terraform-proxmox-talos/blob/main/LICENSE)
+
 Terraform module to provision Talos Linux-based Kubernetes clusters on Proxmox Virtual Environment (PVE). Handles VM creation, Talos image deployment, cluster bootstrapping, and client configuration setup.
 
 ## Features
