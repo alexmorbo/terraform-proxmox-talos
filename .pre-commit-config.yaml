@@ -1,0 +1,27 @@
+repos:
+- repo: https://github.com/antonbabenko/pre-commit-terraform
+  rev: v1.99.0
+  hooks:
+    - id: terraform_fmt
+    - id: terraform_tflint
+      args:
+        - --args=--call-module-type=all
+    - id: terraform_validate
+    - id: tfupdate
+      name: Autoupdate proxmox versions
+      args:
+        - --args=provider proxmox
+        - --args=--version "~> 0.76.1"
+        - --args=--recursive
+    - id: tfupdate
+      name: Autoupdate terraform versions
+      args:
+        - --args=terraform
+        - --args=--version ">= 1.5.0"
+        - --args=--recursive
+    - id: terraform_docs
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v5.0.0
+  hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer

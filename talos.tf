@@ -1,0 +1,129 @@
+resource "talos_machine_secrets" "this" {}
+
+data "talos_client_configuration" "this" {
+  cluster_name         = var.cluster_name
+  client_configuration = talos_machine_secrets.this.client_configuration
+  endpoints            = flatten([for node in local.controlplane_nodes : local.node_ips[node.name]])
+}
+
+data "talos_machine_configuration" "this" {
+  for_each = merge(module.control_plane.nodes, local.all_worker_nodes)
+
+  cluster_name     = var.cluster_name
+  cluster_endpoint = "https://${var.cluster_vip}:6443"
+  machine_type     = each.value.type
+  machine_secrets  = talos_machine_secrets.this.machine_secrets
+  config_patches = [
+    templatefile("${path.module}/talos/machineconfig.yaml.tftpl", {
+      hostname           = each.key
+      type               = each.value.type
+      kubernetes_version = lookup(each.value, "kubernetes_version", var.kubernetes_version)
+      cluster_vip        = var.cluster_vip
+      vm_subnet          = var.vm_subnet
+      pod_subnet         = var.pod_subnet
+      service_subnet     = var.service_subnet
+      networks           = each.value.networks
+      proxmox_node       = each.value.target_node
+      proxmox_cluster    = var.proxmox_cluster.cluster_name
+      node_group         = try(each.value.node_group, null)
+      inline_manifests = [
+        {
+          name = "cilium-install"
+          contents = templatefile("${path.module}/talos/cilium-install.yaml.tftpl", {
+            cilium_values = yamlencode({
+              kubeProxyReplacement = true
+              rollOutCiliumPods    = true
+
+              k8sClientRateLimit = {
+                qps   = 50
+                burst = 100
+              }
+
+              cgroup = {
+                hostRoot = "/sys/fs/cgroup"
+                autoMount = {
+                  enabled = false
+                }
+              }
+
+              externalIPs = {
+                enabled = true
+              }
+
+              l2announcements = {
+                enabled = true
+              }
+
+              ipam = {
+                mode = "kubernetes"
+              }
+
+              hubble = {
+                tls = {
+                  auto = {
+                    method = "cronJob"
+                  }
+                }
+              }
+
+              operator = {
+                replicas = 1
+              }
+
+              securityContext = {
+                capabilities = {
+                  ciliumAgent = [
+                    "CHOWN",
+                    "KILL",
+                    "NET_ADMIN",
+                    "NET_RAW",
+                    "IPC_LOCK",
+                    "SYS_ADMIN",
+                    "SYS_RESOURCE",
+                    "DAC_OVERRIDE",
+                    "FOWNER",
+                    "SETGID",
+                    "SETUID"
+                  ]
+                  cleanCiliumState = [
+                    "NET_ADMIN",
+                    "SYS_ADMIN",
+                    "SYS_RESOURCE"
+                  ]
+                }
+              }
+            })
+          })
+        }
+      ]
+    }),
+  ]
+}
+
+resource "talos_machine_configuration_apply" "this" {
+  for_each = merge(module.control_plane.nodes, local.all_worker_nodes)
+
+  client_configuration        = data.talos_client_configuration.this.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.this[each.key].machine_configuration
+  node                        = local.node_ips[each.key][0]
+
+  on_destroy = {
+    graceful = true
+    reboot   = false
+    reset    = true
+  }
+}
+
+resource "talos_machine_bootstrap" "this" {
+  depends_on = [talos_machine_configuration_apply.this]
+
+  client_configuration = data.talos_client_configuration.this.client_configuration
+  node                 = local.node_ips[local.bootstrap_node][0]
+}
+
+resource "talos_cluster_kubeconfig" "this" {
+  depends_on = [talos_machine_bootstrap.this]
+
+  client_configuration = data.talos_client_configuration.this.client_configuration
+  node                 = var.cluster_vip
+}
