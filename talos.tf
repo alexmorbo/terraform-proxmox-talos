@@ -30,69 +30,7 @@ data "talos_machine_configuration" "this" {
         {
           name = "cilium-install"
           contents = templatefile("${path.module}/talos/cilium-install.yaml.tftpl", {
-            cilium_values = yamlencode({
-              kubeProxyReplacement = true
-              rollOutCiliumPods    = true
-
-              k8sClientRateLimit = {
-                qps   = 50
-                burst = 100
-              }
-
-              cgroup = {
-                hostRoot = "/sys/fs/cgroup"
-                autoMount = {
-                  enabled = false
-                }
-              }
-
-              externalIPs = {
-                enabled = true
-              }
-
-              l2announcements = {
-                enabled = true
-              }
-
-              ipam = {
-                mode = "kubernetes"
-              }
-
-              hubble = {
-                tls = {
-                  auto = {
-                    method = "cronJob"
-                  }
-                }
-              }
-
-              operator = {
-                replicas = 1
-              }
-
-              securityContext = {
-                capabilities = {
-                  ciliumAgent = [
-                    "CHOWN",
-                    "KILL",
-                    "NET_ADMIN",
-                    "NET_RAW",
-                    "IPC_LOCK",
-                    "SYS_ADMIN",
-                    "SYS_RESOURCE",
-                    "DAC_OVERRIDE",
-                    "FOWNER",
-                    "SETGID",
-                    "SETUID"
-                  ]
-                  cleanCiliumState = [
-                    "NET_ADMIN",
-                    "SYS_ADMIN",
-                    "SYS_RESOURCE"
-                  ]
-                }
-              }
-            })
+            cilium_values = yamlencode(var.cilium_values)
           })
         }
       ]

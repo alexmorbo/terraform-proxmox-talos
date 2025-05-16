@@ -152,3 +152,71 @@ variable "kubeconfig_file_template" {
   description = "Template path for the kubeconfig file, where '__CLUSTER__' will be replaced by the cluster name."
   default     = "~/.kube/configs/__CLUSTER__.yaml"
 }
+
+variable "cilium_values" {
+  type        = any
+  description = "A map of configuration values for Cilium, used to customize its deployment and behavior in the Kubernetes cluster."
+  default = {
+    kubeProxyReplacement = true
+    rollOutCiliumPods    = true
+
+    k8sClientRateLimit = {
+      qps   = 50
+      burst = 100
+    }
+
+    cgroup = {
+      hostRoot = "/sys/fs/cgroup"
+      autoMount = {
+        enabled = false
+      }
+    }
+
+    externalIPs = {
+      enabled = true
+    }
+
+    l2announcements = {
+      enabled = true
+    }
+
+    ipam = {
+      mode = "kubernetes"
+    }
+
+    hubble = {
+      tls = {
+        auto = {
+          method = "cronJob"
+        }
+      }
+    }
+
+    operator = {
+      replicas = 1
+    }
+
+    securityContext = {
+      capabilities = {
+        ciliumAgent = [
+          "CHOWN",
+          "KILL",
+          "NET_ADMIN",
+          "NET_RAW",
+          "IPC_LOCK",
+          "SYS_ADMIN",
+          "SYS_RESOURCE",
+          "DAC_OVERRIDE",
+          "FOWNER",
+          "SETGID",
+          "SETUID"
+        ]
+        cleanCiliumState = [
+          "NET_ADMIN",
+          "SYS_ADMIN",
+          "SYS_RESOURCE"
+        ]
+      }
+    }
+  }
+}
