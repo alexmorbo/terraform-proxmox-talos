@@ -24,3 +24,9 @@ output "kubeconfig" {
   description = "The kubeconfig for accessing the Kubernetes cluster, containing the necessary authentication information and cluster context."
   sensitive   = true
 }
+
+output "dedicated_node_groups" {
+  value = [for group, nodes in local.workers_by_group : group if group != "default"]
+
+  description = "Set of dedicated node groups in the cluster, that have taints."
+}

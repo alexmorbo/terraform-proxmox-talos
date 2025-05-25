@@ -226,6 +226,7 @@ module "talos_cluster" {
 |------|-------------|
 | <a name="output_all_ips"></a> [all\_ips](#output\_all\_ips) | A set of all the IP addresses used by the cluster nodes. This includes both control plane and worker nodes. |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | The name of the Kubernetes cluster, as defined in the input variable. |
+| <a name="output_dedicated_node_groups"></a> [dedicated\_node\_groups](#output\_dedicated\_node\_groups) | Set of dedicated node groups in the cluster, that have taints. |
 | <a name="output_kubeconfig"></a> [kubeconfig](#output\_kubeconfig) | The kubeconfig for accessing the Kubernetes cluster, containing the necessary authentication information and cluster context. |
 | <a name="output_node_ips"></a> [node\_ips](#output\_node\_ips) | A map of node names to their respective IP addresses, showing the internal IPs of each node in the cluster. |
 | <a name="output_talos_config"></a> [talos\_config](#output\_talos\_config) | The Talos configuration used for the cluster nodes, containing sensitive data such as credentials and settings for node provisioning. |
