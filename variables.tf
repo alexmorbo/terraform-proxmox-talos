@@ -160,6 +160,12 @@ variable "cilium_values" {
     kubeProxyReplacement = true
     rollOutCiliumPods    = true
 
+    k8sServiceHost = "localhost"
+    k8sServicePort = 7445
+
+    routingMode    = "tunnel"
+    tunnelProtocol = "vxlan"
+
     k8sClientRateLimit = {
       qps   = 50
       burst = 100
