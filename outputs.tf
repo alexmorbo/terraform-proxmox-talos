@@ -30,3 +30,9 @@ output "dedicated_node_groups" {
 
   description = "Set of dedicated node groups in the cluster, that have taints."
 }
+
+output "cilium_values" {
+  value = var.cilium_values
+
+  description = "The Cilium values used for the cluster initialization, which define the configuration for the Cilium CNI plugin."
+}

@@ -225,6 +225,7 @@ module "talos_cluster" {
 | Name | Description |
 |------|-------------|
 | <a name="output_all_ips"></a> [all\_ips](#output\_all\_ips) | A set of all the IP addresses used by the cluster nodes. This includes both control plane and worker nodes. |
+| <a name="output_cilium_values"></a> [cilium\_values](#output\_cilium\_values) | The Cilium values used for the cluster initialization, which define the configuration for the Cilium CNI plugin. |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | The name of the Kubernetes cluster, as defined in the input variable. |
 | <a name="output_dedicated_node_groups"></a> [dedicated\_node\_groups](#output\_dedicated\_node\_groups) | Set of dedicated node groups in the cluster, that have taints. |
 | <a name="output_kubeconfig"></a> [kubeconfig](#output\_kubeconfig) | The kubeconfig for accessing the Kubernetes cluster, containing the necessary authentication information and cluster context. |
