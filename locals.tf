@@ -95,7 +95,7 @@ locals {
         for node_key, node_group_config in local.workers : [
           for node_group, worker_config in node_group_config : [
             for i in range(worker_config.count) : {
-              key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_key}${i}${worker_config.talos_version}"), 0, 7)}"
+              key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version}"), 0, 7)}"
 
               value = {
                 type        = "worker"
@@ -118,7 +118,7 @@ locals {
         for node_key, node_group_config in local.workers : [
           for node_group, worker_config in node_group_config : [
             for i in(worker_config.is_update ? range(worker_config.count) : []) : {
-              key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_key}${i}${worker_config.talos_version_update}"), 0, 7)}"
+              key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version_update}"), 0, 7)}"
 
               value = {
                 type        = "worker"
