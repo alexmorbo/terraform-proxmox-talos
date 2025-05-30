@@ -11,7 +11,6 @@ machine:
       register-with-taints: "node.home.lab/dedicated=${node_group}:NoExecute"
       %{~ endif ~}
     clusterDNS:
-      - "169.254.2.53"
       - "${cidrhost(service_subnet, 10)}"
     nodeIP:
       validSubnets: ["${vm_subnet}"]
@@ -37,8 +36,6 @@ machine:
           ip: "${cluster_vip}"
         %{ endif }
     %{~ endfor ~}
-      - interface: dummy0
-        addresses: ["169.254.2.53/32"]
   nodeLabels:
     topology.kubernetes.io/region: ${proxmox_cluster}
     topology.kubernetes.io/zone: ${proxmox_node}
