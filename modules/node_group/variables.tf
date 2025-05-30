@@ -24,6 +24,7 @@ variable "nodes" {
     sockets = optional(number, 1)
     cores   = optional(number, 4)
     memory  = optional(number, 2048)
+    sysctls = optional(map(string), {})
     networks = list(object({
       interface = string
       bridge    = string

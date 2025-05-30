@@ -2,6 +2,10 @@ output "target_node" {
   value = var.target_node
 }
 
+output "sysctls" {
+  value = var.sysctls
+}
+
 output "networks" {
   value = var.networks
 }

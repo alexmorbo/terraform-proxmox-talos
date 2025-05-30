@@ -13,6 +13,7 @@ module "vm" {
   target_node  = each.value.target_node
   datastore    = each.value.datastore
   image        = each.value.image
+  sysctls      = each.value.sysctls
   dns          = var.dns
 
   sockets  = each.value.sockets

@@ -67,10 +67,11 @@ variable "dns" {
 
 variable "controlplanes" {
   type = map(object({
-    count  = number
-    socket = optional(number, 1)
-    cpu    = optional(number, 4)
-    ram    = optional(number, 8192)
+    count   = number
+    socket  = optional(number, 1)
+    cpu     = optional(number, 4)
+    ram     = optional(number, 8192)
+    sysctls = optional(map(string), {})
     networks = list(object({
       interface = string
       bridge    = string
@@ -91,6 +92,7 @@ variable "workers" {
     socket               = optional(number, 1)
     cpu                  = optional(number, 4)
     ram                  = optional(number, 8192)
+    sysctls              = optional(map(string), {})
     networks = list(object({
       bridge    = string
       tag       = number
@@ -225,4 +227,11 @@ variable "cilium_values" {
       }
     }
   }
+}
+
+variable "sysctls" {
+  type        = map(string)
+  description = "A map of sysctl settings to be applied to the nodes in the cluster. These settings can be used to tune kernel parameters for performance or security."
+
+  default = {}
 }

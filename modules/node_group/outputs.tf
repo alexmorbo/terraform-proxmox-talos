@@ -6,6 +6,7 @@ output "nodes" {
       networks    = node.networks
       node_group  = node.node_group
       vm          = node.node
+      sysctls     = node.sysctls
     }
   }
 }

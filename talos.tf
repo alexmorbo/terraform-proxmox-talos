@@ -26,6 +26,7 @@ data "talos_machine_configuration" "this" {
       proxmox_node       = each.value.target_node
       proxmox_cluster    = var.proxmox_cluster.cluster_name
       node_group         = try(each.value.node_group, null)
+      sysctls            = merge(var.sysctls, each.value.sysctls)
       inline_manifests = [
         {
           name = "cilium-install"

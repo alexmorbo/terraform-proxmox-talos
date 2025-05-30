@@ -15,6 +15,12 @@ machine:
       - "${cidrhost(service_subnet, 10)}"
     nodeIP:
       validSubnets: ["${vm_subnet}"]
+  %{ if length(sysctls) > 0 }
+  sysctls:
+  %{ for syskey, sysvalue in sysctls }
+    ${syskey}: "${sysvalue}"
+  %{ endfor }
+  %{ endif }
   network:
     hostname: ${hostname}
     interfaces:

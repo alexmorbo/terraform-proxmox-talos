@@ -59,6 +59,7 @@ locals {
               sockets     = cp_config.socket
               cpus        = cp_config.cpu
               memory      = cp_config.ram
+              sysctls     = cp_config.sysctls
               networks    = cp_config.networks
               image       = proxmox_virtual_environment_download_file.talos_image["${node_key}_${local.talos_version}"].id
               bootstrap   = (node_key == local.first_controlplane_node_key && i == 0)
@@ -80,6 +81,7 @@ locals {
               sockets     = cp_config.socket
               cpus        = cp_config.cpu
               memory      = cp_config.ram
+              sysctls     = cp_config.sysctls
               networks    = cp_config.networks
               image       = proxmox_virtual_environment_download_file.talos_image["${node_key}_${local.talos_version_update}"].id
               bootstrap   = false
@@ -103,6 +105,7 @@ locals {
                 sockets     = worker_config.socket
                 cpus        = worker_config.cpu
                 memory      = worker_config.ram
+                sysctls     = worker_config.sysctls
                 networks    = worker_config.networks
                 image       = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version}"].id
                 node_group  = node_group
@@ -126,6 +129,7 @@ locals {
                 sockets     = worker_config.socket
                 cpus        = worker_config.cpu
                 memory      = worker_config.ram
+                sysctls     = worker_config.sysctls
                 networks    = worker_config.networks
                 image       = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version_update}"].id
                 node_group  = node_group

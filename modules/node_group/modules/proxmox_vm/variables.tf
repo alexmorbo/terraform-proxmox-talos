@@ -44,6 +44,12 @@ variable "memory" {
   default = 2048
 }
 
+variable "sysctls" {
+  type = map(string)
+
+  default = {}
+}
+
 variable "networks" {
   type = list(object({
     interface = string
