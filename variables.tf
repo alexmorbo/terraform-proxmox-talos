@@ -73,11 +73,12 @@ variable "controlplanes" {
     ram     = optional(number, 8192)
     sysctls = optional(map(string), {})
     networks = list(object({
-      interface = string
-      bridge    = string
-      tag       = number
-      model     = optional(string, "virtio")
-      address   = optional(string, null)
+      interface     = string
+      bridge        = string
+      tag           = number
+      model         = optional(string, "virtio")
+      address       = optional(string, null)
+      dhcp_disabled = optional(bool, false)
     }))
   }))
   description = "Configuration of control plane nodes, including the number of nodes, resources (CPU, RAM), and network configuration."
@@ -94,11 +95,12 @@ variable "workers" {
     ram                  = optional(number, 8192)
     sysctls              = optional(map(string), {})
     networks = list(object({
-      bridge    = string
-      tag       = number
-      interface = string
-      model     = optional(string, "virtio")
-      address   = optional(string, null)
+      bridge        = string
+      tag           = number
+      interface     = string
+      model         = optional(string, "virtio")
+      address       = optional(string, null)
+      dhcp_disabled = optional(bool, false)
     }))
   })))
 

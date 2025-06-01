@@ -52,11 +52,12 @@ variable "sysctls" {
 
 variable "networks" {
   type = list(object({
-    interface = string
-    bridge    = string
-    tag       = number
-    model     = optional(string, "virtio")
-    address   = optional(string, null)
+    interface     = string
+    bridge        = string
+    tag           = number
+    model         = optional(string, "virtio")
+    address       = optional(string, null)
+    dhcp_disabled = optional(bool, false)
   }))
 }
 
