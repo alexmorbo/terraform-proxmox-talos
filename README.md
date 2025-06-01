@@ -166,7 +166,7 @@ module "talos_cluster" {
 
 | Name | Version |
 |------|---------|
-| <a name="provider_local"></a> [local](#provider\_local) | 2.5.2 |
+| <a name="provider_local"></a> [local](#provider\_local) | 2.5.3 |
 | <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.76.1 |
 | <a name="provider_talos"></a> [talos](#provider\_talos) | 0.8.0-alpha.0 |
 
@@ -230,6 +230,8 @@ module "talos_cluster" {
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | The name of the Kubernetes cluster, as defined in the input variable. |
 | <a name="output_dedicated_node_groups"></a> [dedicated\_node\_groups](#output\_dedicated\_node\_groups) | Set of dedicated node groups in the cluster, that have taints. |
 | <a name="output_kubeconfig"></a> [kubeconfig](#output\_kubeconfig) | The kubeconfig for accessing the Kubernetes cluster, containing the necessary authentication information and cluster context. |
+| <a name="output_kubernetes_version"></a> [kubernetes\_version](#output\_kubernetes\_version) | n/a |
 | <a name="output_node_ips"></a> [node\_ips](#output\_node\_ips) | A map of node names to their respective IP addresses, showing the internal IPs of each node in the cluster. |
 | <a name="output_talos_config"></a> [talos\_config](#output\_talos\_config) | The Talos configuration used for the cluster nodes, containing sensitive data such as credentials and settings for node provisioning. |
+| <a name="output_talos_version"></a> [talos\_version](#output\_talos\_version) | n/a |
 <!-- END_TF_DOCS -->

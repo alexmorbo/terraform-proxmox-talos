@@ -3,6 +3,14 @@ output "cluster_name" {
   description = "The name of the Kubernetes cluster, as defined in the input variable."
 }
 
+output "talos_version" {
+  value = local.talos_version
+}
+
+output "kubernetes_version" {
+  value = var.kubernetes_version
+}
+
 output "node_ips" {
   value       = local.node_ips
   description = "A map of node names to their respective IP addresses, showing the internal IPs of each node in the cluster."
