@@ -61,6 +61,17 @@ variable "networks" {
   }))
 }
 
+variable "pci_passthrough" {
+  type = list(object({
+    id      = optional(string)
+    mapping = optional(string)
+    pcie    = optional(bool, true)
+    rombar  = optional(bool, true)
+  }))
+
+  default = []
+}
+
 variable "datastore" {
   type = string
 }

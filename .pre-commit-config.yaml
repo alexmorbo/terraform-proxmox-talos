@@ -11,7 +11,19 @@ repos:
       name: Autoupdate proxmox versions
       args:
         - --args=provider proxmox
-        - --args=--version "~> 0.76.1"
+        - --args=--version ">= 0.76.1"
+        - --args=--recursive
+    - id: tfupdate
+      name: Autoupdate talos versions
+      args:
+        - --args=provider talos
+        - --args=--version ">= 0.8.0"
+        - --args=--recursive
+    - id: tfupdate
+      name: Autoupdate local versions
+      args:
+        - --args=provider local
+        - --args=--version ">= 2.5.2"
         - --args=--recursive
     - id: tfupdate
       name: Autoupdate terraform versions

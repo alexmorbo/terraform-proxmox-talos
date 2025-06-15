@@ -16,8 +16,9 @@ module "vm" {
   sysctls      = each.value.sysctls
   dns          = var.dns
 
-  sockets  = each.value.sockets
-  cores    = each.value.cores
-  memory   = each.value.memory
-  networks = each.value.networks
+  sockets         = each.value.sockets
+  cores           = each.value.cores
+  memory          = each.value.memory
+  networks        = each.value.networks
+  pci_passthrough = each.value.pci_passthrough
 }

@@ -65,13 +65,14 @@ resource "proxmox_virtual_environment_vm" "vm" {
     type = "serial0"
   }
 
-  # dynamic "hostpci" {
-  #   for_each = each.value.pci_passthrough
-  #   content {
-  #     device = "hostpci${hostpci.key}"
-  #     id     = hostpci.value
-  #     pcie   = true
-  #     rombar = true
-  #   }
-  # }
+  dynamic "hostpci" {
+    for_each = var.pci_passthrough
+    content {
+      device  = "hostpci${hostpci.key}"
+      id      = hostpci.value.id
+      pcie    = hostpci.value.pcie
+      rombar  = hostpci.value.rombar
+      mapping = hostpci.value.mapping
+    }
+  }
 }

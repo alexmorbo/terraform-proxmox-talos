@@ -100,16 +100,17 @@ locals {
               key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version}"), 0, 7)}"
 
               value = {
-                type        = "worker"
-                from        = "init"
-                sockets     = worker_config.socket
-                cpus        = worker_config.cpu
-                memory      = worker_config.ram
-                sysctls     = worker_config.sysctls
-                networks    = worker_config.networks
-                image       = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version}"].id
-                node_group  = node_group
-                target_node = node_key
+                type            = "worker"
+                from            = "init"
+                sockets         = worker_config.socket
+                cpus            = worker_config.cpu
+                memory          = worker_config.ram
+                sysctls         = worker_config.sysctls
+                networks        = worker_config.networks
+                pci_passthrough = worker_config.pci_passthrough
+                image           = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version}"].id
+                node_group      = node_group
+                target_node     = node_key
               }
             }
           ]
@@ -124,16 +125,17 @@ locals {
               key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version_update}"), 0, 7)}"
 
               value = {
-                type        = "worker"
-                from        = "update"
-                sockets     = worker_config.socket
-                cpus        = worker_config.cpu
-                memory      = worker_config.ram
-                sysctls     = worker_config.sysctls
-                networks    = worker_config.networks
-                image       = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version_update}"].id
-                node_group  = node_group
-                target_node = node_key
+                type            = "worker"
+                from            = "update"
+                sockets         = worker_config.socket
+                cpus            = worker_config.cpu
+                memory          = worker_config.ram
+                sysctls         = worker_config.sysctls
+                networks        = worker_config.networks
+                pci_passthrough = worker_config.pci_passthrough
+                image           = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version_update}"].id
+                node_group      = node_group
+                target_node     = node_key
               }
             }
           ]

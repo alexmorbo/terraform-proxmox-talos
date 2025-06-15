@@ -158,9 +158,9 @@ module "talos_cluster" {
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
-| <a name="requirement_local"></a> [local](#requirement\_local) | ~> 2.5.2 |
-| <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | ~> 0.76.1 |
-| <a name="requirement_talos"></a> [talos](#requirement\_talos) | 0.8.0-alpha.0 |
+| <a name="requirement_local"></a> [local](#requirement\_local) | >= 2.5.2 |
+| <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | >= 0.76.1 |
+| <a name="requirement_talos"></a> [talos](#requirement\_talos) | >= 0.8.0 |
 
 ## Providers
 
@@ -184,14 +184,14 @@ module "talos_cluster" {
 | [local_file.kubeconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [local_file.talosconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [proxmox_virtual_environment_download_file.talos_image](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_download_file) | resource |
-| [talos_cluster_kubeconfig.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/resources/cluster_kubeconfig) | resource |
-| [talos_image_factory_schematic.version](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/resources/image_factory_schematic) | resource |
-| [talos_machine_bootstrap.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/resources/machine_bootstrap) | resource |
-| [talos_machine_configuration_apply.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/resources/machine_configuration_apply) | resource |
-| [talos_machine_secrets.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/resources/machine_secrets) | resource |
-| [talos_client_configuration.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/data-sources/client_configuration) | data source |
-| [talos_image_factory_extensions_versions.version](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/data-sources/image_factory_extensions_versions) | data source |
-| [talos_machine_configuration.this](https://registry.terraform.io/providers/siderolabs/talos/0.8.0-alpha.0/docs/data-sources/machine_configuration) | data source |
+| [talos_cluster_kubeconfig.this](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/cluster_kubeconfig) | resource |
+| [talos_image_factory_schematic.version](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/image_factory_schematic) | resource |
+| [talos_machine_bootstrap.this](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_bootstrap) | resource |
+| [talos_machine_configuration_apply.this](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_configuration_apply) | resource |
+| [talos_machine_secrets.this](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_secrets) | resource |
+| [talos_client_configuration.this](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/data-sources/client_configuration) | data source |
+| [talos_image_factory_extensions_versions.version](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/data-sources/image_factory_extensions_versions) | data source |
+| [talos_machine_configuration.this](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/data-sources/machine_configuration) | data source |
 
 ## Inputs
 
@@ -219,7 +219,7 @@ module "talos_cluster" {
 | <a name="input_talos_schematic"></a> [talos\_schematic](#input\_talos\_schematic) | A set of Talos configuration files or schematics to apply during the cluster setup. | `set(string)` | n/a | yes |
 | <a name="input_talosconfig_file_name"></a> [talosconfig\_file\_name](#input\_talosconfig\_file\_name) | The path and filename for the generated Talos configuration file. Defaults to ~/.talos/config. | `string` | `"~/.talos/config"` | no |
 | <a name="input_vm_subnet"></a> [vm\_subnet](#input\_vm\_subnet) | The subnet for the virtual machines in the cluster. | `string` | n/a | yes |
-| <a name="input_workers"></a> [workers](#input\_workers) | Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details. | <pre>map(map(object({<br/>    count                = number<br/>    talos_version        = optional(string)<br/>    talos_version_update = optional(string)<br/>    kubernetes_version   = optional(string)<br/>    socket               = optional(number, 1)<br/>    cpu                  = optional(number, 4)<br/>    ram                  = optional(number, 8192)<br/>    sysctls              = optional(map(string), {})<br/>    networks = list(object({<br/>      bridge        = string<br/>      tag           = number<br/>      interface     = string<br/>      model         = optional(string, "virtio")<br/>      address       = optional(string, null)<br/>      dhcp_disabled = optional(bool, false)<br/>    }))<br/>  })))</pre> | `{}` | no |
+| <a name="input_workers"></a> [workers](#input\_workers) | Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details. | <pre>map(map(object({<br/>    count                = number<br/>    talos_version        = optional(string)<br/>    talos_version_update = optional(string)<br/>    kubernetes_version   = optional(string)<br/>    socket               = optional(number, 1)<br/>    cpu                  = optional(number, 4)<br/>    ram                  = optional(number, 8192)<br/>    sysctls              = optional(map(string), {})<br/>    networks = list(object({<br/>      bridge        = string<br/>      tag           = number<br/>      interface     = string<br/>      model         = optional(string, "virtio")<br/>      address       = optional(string, null)<br/>      dhcp_disabled = optional(bool, false)<br/>    }))<br/>    pci_passthrough = optional(list(object({<br/>      id      = optional(string)<br/>      mapping = optional(string)<br/>      pcie    = optional(bool, true)<br/>      rombar  = optional(bool, true)<br/>    })))<br/>  })))</pre> | `{}` | no |
 
 ## Outputs
 

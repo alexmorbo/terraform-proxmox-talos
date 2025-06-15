@@ -102,6 +102,12 @@ variable "workers" {
       address       = optional(string, null)
       dhcp_disabled = optional(bool, false)
     }))
+    pci_passthrough = optional(list(object({
+      id      = optional(string)
+      mapping = optional(string)
+      pcie    = optional(bool, true)
+      rombar  = optional(bool, true)
+    })))
   })))
 
   default     = {}
