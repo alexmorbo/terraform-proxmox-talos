@@ -73,6 +73,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
       pcie    = hostpci.value.pcie
       rombar  = hostpci.value.rombar
       mapping = hostpci.value.mapping
+      xvga    = hostpci.value.xvga
     }
   }
 }

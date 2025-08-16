@@ -107,6 +107,7 @@ variable "workers" {
       mapping = optional(string)
       pcie    = optional(bool, true)
       rombar  = optional(bool, true)
+      xvga    = optional(bool, false)
     })))
   })))
 
