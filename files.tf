@@ -1,7 +1,7 @@
 resource "proxmox_virtual_environment_download_file" "talos_image" {
   for_each     = local.image_per_pve_node
   content_type = "iso"
-  datastore_id = each.value.datastore
+  datastore_id = var.iso_datastore_id != null ? var.iso_datastore_id : each.value.datastore
   node_name    = each.value.node
 
   file_name               = each.value.file_name
