@@ -244,3 +244,9 @@ variable "sysctls" {
 
   default = {}
 }
+
+variable "iso_datastore_id" {
+  description = "Datastore ID for ISO images (default: uses datastore from proxmox_cluster.nodes)"
+  type        = string
+  default     = null
+}
