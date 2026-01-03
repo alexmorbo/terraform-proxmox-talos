@@ -18,6 +18,7 @@ Terraform module to provision Talos Linux-based Kubernetes clusters on Proxmox V
 module "talos_cluster" {
   source        = "github.com/alexmorbo/terraform-proxmox-talos"
   cluster_name  = "mycluster"
+  iso_datastore_id = "local"
   talos_cp_version = "1.10.0"
   talos_schematic = [
     "siderolabs/i915",
