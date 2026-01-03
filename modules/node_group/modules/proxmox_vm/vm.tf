@@ -57,12 +57,8 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
-  serial_device {
-    device = "socket"
-  }
-
   vga {
-    type = "serial0"
+    type = "std"
   }
 
   dynamic "hostpci" {
