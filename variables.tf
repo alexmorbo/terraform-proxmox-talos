@@ -75,7 +75,7 @@ variable "controlplanes" {
     networks = list(object({
       interface     = string
       bridge        = string
-      tag           = number
+      tag           = optional(number, null)
       model         = optional(string, "virtio")
       address       = optional(string, null)
       dhcp_disabled = optional(bool, false)
@@ -96,7 +96,7 @@ variable "workers" {
     sysctls              = optional(map(string), {})
     networks = list(object({
       bridge        = string
-      tag           = number
+      tag           = optional(number, null)
       interface     = string
       model         = optional(string, "virtio")
       address       = optional(string, null)
