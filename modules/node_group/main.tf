@@ -16,9 +16,13 @@ module "vm" {
   sysctls      = each.value.sysctls
   dns          = var.dns
 
+  kubernetes_version = each.value.kubernetes_version
+
   sockets         = each.value.sockets
   cores           = each.value.cores
   memory          = each.value.memory
   networks        = each.value.networks
   pci_passthrough = each.value.pci_passthrough
+  startup         = each.value.startup
+  extra_mounts    = each.value.extra_mounts
 }

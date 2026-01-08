@@ -14,12 +14,13 @@ variable "group_name" {
 
 variable "nodes" {
   type = list(object({
-    name        = string
-    type        = string
-    target_node = string
-    datastore   = string
-    image       = string
-    node_group  = optional(string)
+    name               = string
+    type               = string
+    target_node        = string
+    datastore          = string
+    image              = string
+    node_group         = optional(string)
+    kubernetes_version = optional(string)
 
     sockets = optional(number, 1)
     cores   = optional(number, 4)
@@ -39,6 +40,17 @@ variable "nodes" {
       pcie    = optional(bool, true)
       rombar  = optional(bool, true)
       xvga    = optional(bool, false)
+    })), [])
+    startup = optional(object({
+      order      = number
+      down_delay = number
+      up_delay   = number
+    }), null)
+    extra_mounts = optional(list(object({
+      destination = string
+      source      = string
+      type        = optional(string, "nfs")
+      options     = optional(list(string), ["hard", "nfsvers=4.1"])
     })), [])
   }))
 }

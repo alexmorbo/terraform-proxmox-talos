@@ -14,6 +14,18 @@ machine:
       - "${cidrhost(service_subnet, 10)}"
     nodeIP:
       validSubnets: ["${vm_subnet}"]
+%{ if length(extra_mounts) > 0 ~}
+    extraMounts:
+%{ for mount in extra_mounts ~}
+      - destination: ${mount.destination}
+        type: ${mount.type}
+        source: ${mount.source}
+        options:
+%{ for opt in mount.options ~}
+          - ${opt}
+%{ endfor ~}
+%{ endfor ~}
+%{ endif ~}
   %{ if length(sysctls) > 0 }
   sysctls:
   %{ for syskey, sysvalue in sysctls }
@@ -39,6 +51,11 @@ machine:
         %{ endif }
 
     %{~ endfor ~}
+    nameservers:
+    %{~ for dns_server in dns ~}
+      - ${dns_server}
+
+    %{~ endfor ~}
   nodeLabels:
     topology.kubernetes.io/region: ${proxmox_cluster}
     topology.kubernetes.io/zone: ${proxmox_node}
@@ -58,8 +75,9 @@ machine:
       keys:
         - nodeID: {}
           slot: 0
+%{ if type == "controlplane" || length(machine_features) > 0 }
   features:
-    %{ if type == "controlplane" }
+%{ if type == "controlplane" }
     kubernetesTalosAPIAccess:
       enabled: true
       allowedRoles:
@@ -69,7 +87,11 @@ machine:
       allowedKubernetesNamespaces:
         - "kube-system"
         - "operator-talos"
-    %{ endif }
+%{ endif }
+%{ if length(machine_features) > 0 ~}
+${replace(yamlencode(machine_features), "/(?m)^/", "    ")}
+%{ endif ~}
+%{ endif }
 
 cluster:
   allowSchedulingOnControlPlanes: true

@@ -86,3 +86,30 @@ variable "dns" {
 
   default = ["1.1.1.1", "8.8.8.8"]
 }
+
+variable "kubernetes_version" {
+  type = string
+
+  default = null
+}
+
+variable "startup" {
+  type = object({
+    order      = number
+    down_delay = number
+    up_delay   = number
+  })
+
+  default = null
+}
+
+variable "extra_mounts" {
+  type = list(object({
+    destination = string
+    source      = string
+    type        = optional(string, "nfs")
+    options     = optional(list(string), ["hard", "nfsvers=4.1"])
+  }))
+
+  default = []
+}

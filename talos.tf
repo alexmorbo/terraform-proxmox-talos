@@ -14,19 +14,58 @@ data "talos_machine_configuration" "this" {
   machine_type     = each.value.type
   machine_secrets  = talos_machine_secrets.this.machine_secrets
   config_patches = [
-    templatefile("${path.module}/talos/machineconfig.yaml.tftpl", {
+    templatefile("${path.module}/talos/pve_vm_machineconfig.yaml.tftpl", {
       hostname           = each.key
       type               = each.value.type
-      kubernetes_version = lookup(each.value, "kubernetes_version", var.kubernetes_version)
+      kubernetes_version = local.node_kubernetes_versions[each.key]
       cluster_vip        = var.cluster_vip
       vm_subnet          = var.vm_subnet
       pod_subnet         = var.pod_subnet
       service_subnet     = var.service_subnet
       networks           = each.value.networks
+      dns                = var.dns
       proxmox_node       = each.value.target_node
       proxmox_cluster    = var.proxmox_cluster.cluster_name
       node_group         = try(each.value.node_group, null)
       sysctls            = merge(var.sysctls, each.value.sysctls)
+      machine_features   = var.machine_features
+      extra_mounts       = try(each.value.extra_mounts, [])
+      inline_manifests = [
+        {
+          name = "cilium-install"
+          contents = templatefile("${path.module}/talos/cilium-install.yaml.tftpl", {
+            cilium_values = yamlencode(var.cilium_values)
+          })
+        }
+      ]
+    }),
+  ]
+}
+
+data "talos_machine_configuration" "baremetal" {
+  for_each = local.baremetal_workers
+
+  cluster_name     = var.cluster_name
+  cluster_endpoint = "https://${var.cluster_vip}:6443"
+  machine_type     = each.value.type
+  machine_secrets  = talos_machine_secrets.this.machine_secrets
+  config_patches = [
+    templatefile("${path.module}/talos/baremetal_machineconfig.yaml.tftpl", {
+      hostname           = each.key
+      type               = each.value.type
+      kubernetes_version = local.node_kubernetes_versions[each.key]
+      vm_subnet          = var.vm_subnet
+      pod_subnet         = var.pod_subnet
+      service_subnet     = var.service_subnet
+      networks           = each.value.networks
+      target_node        = each.value.target_node
+      node_group         = each.value.node_group
+      enable_taints      = lookup(each.value, "enable_taints", true)
+      sysctls            = lookup(each.value, "sysctls", {})
+      has_nvidia         = anytrue([for cap in each.value.capabilities : can(regex("nvidia", cap))])
+      install_disk       = each.value.install_disk
+      install_wipe       = each.value.install_wipe
+      extra_mounts       = each.value.extra_mounts
       inline_manifests = [
         {
           name = "cilium-install"
@@ -45,6 +84,7 @@ resource "talos_machine_configuration_apply" "this" {
   client_configuration        = data.talos_client_configuration.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.this[each.key].machine_configuration
   node                        = local.node_ips[each.key][0]
+  # apply_mode                  = "reboot"
 
   on_destroy = {
     graceful = true
@@ -53,11 +93,49 @@ resource "talos_machine_configuration_apply" "this" {
   }
 }
 
+resource "talos_machine_configuration_apply" "baremetal" {
+  for_each = local.baremetal_workers
+
+  client_configuration        = data.talos_client_configuration.this.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.baremetal[each.key].machine_configuration
+  node                        = each.value.networks[0].address
+  # apply_mode                  = "reboot"
+
+  on_destroy = {
+    graceful = true
+    reboot   = false
+    reset    = true
+  }
+}
+
+# # Wait for nodes to be healthy after config apply
+# data "talos_cluster_health" "this" {
+#   depends_on = [
+#     talos_machine_configuration_apply.this,
+#     talos_machine_configuration_apply.baremetal
+#   ]
+
+#   client_configuration = talos_machine_secrets.this.client_configuration
+#   endpoints            = flatten([for node in local.controlplane_nodes : local.node_ips[node.name]])
+#   control_plane_nodes  = flatten([for node in local.controlplane_nodes : local.node_ips[node.name]])
+#   worker_nodes         = flatten([for node_name, node_data in local.all_worker_nodes : local.node_ips[node_name]])
+
+#   skip_kubernetes_checks = true
+
+#   timeouts = {
+#     read = "10m"
+#   }
+# }
+
 resource "talos_machine_bootstrap" "this" {
-  depends_on = [talos_machine_configuration_apply.this]
+  depends_on = [
+    talos_machine_configuration_apply.this,
+    talos_machine_configuration_apply.baremetal
+  ]
 
   client_configuration = data.talos_client_configuration.this.client_configuration
-  node                 = local.node_ips[local.bootstrap_node][0]
+  # Use bootstrap node IP for fresh cluster (VIP not yet available)
+  node = local.node_ips[local.bootstrap_node_name][0]
 }
 
 resource "talos_cluster_kubeconfig" "this" {

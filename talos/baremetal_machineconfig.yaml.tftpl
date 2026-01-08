@@ -1,0 +1,90 @@
+machine:
+  install:
+    disk: ${install_disk}
+    wipe: ${install_wipe}
+    extraKernelArgs:
+      - net.ifnames=0
+  kubelet:
+    image: "ghcr.io/siderolabs/kubelet:v${kubernetes_version}"
+    %{~ if enable_taints && node_group != null && node_group != "default" ~}
+    extraArgs:
+      register-with-taints: "node.home.lab/dedicated=${node_group}:NoExecute"
+    %{~ endif ~}
+    clusterDNS:
+      - "${cidrhost(service_subnet, 10)}"
+    nodeIP:
+      validSubnets: ["${vm_subnet}"]
+%{ if length(extra_mounts) > 0 ~}
+    extraMounts:
+%{ for mount in extra_mounts ~}
+      - destination: ${mount.destination}
+        type: ${mount.type}
+        source: ${mount.source}
+        options:
+%{ for opt in mount.options ~}
+          - ${opt}
+%{ endfor ~}
+%{ endfor ~}
+%{ endif ~}
+  %{ if has_nvidia || length(sysctls) > 0 }
+  sysctls:
+  %{ if has_nvidia }
+    net.core.bpf_jit_harden: "1"
+  %{ endif }
+  %{ for syskey, sysvalue in sysctls }
+    ${syskey}: "${sysvalue}"
+  %{ endfor }
+  %{ endif }
+  %{ if has_nvidia }
+  kernel:
+    modules:
+      - name: nvidia
+      - name: nvidia_uvm
+      - name: nvidia_drm
+      - name: nvidia_modeset
+  %{ endif }
+  network:
+    hostname: ${hostname}
+    interfaces:
+    %{~ for network in networks ~}
+      - interface: ${network.interface}
+        %{~ if network.address != null ~}
+        addresses: [${network.address}/${split("/", vm_subnet)[1]}]
+        %{ endif }
+        %{~ if network.address != null || network.dhcp_disabled == true ~}
+        dhcp: false
+        %{ else }
+        dhcp: true
+        %{ endif }
+
+    %{~ endfor ~}
+  nodeLabels:
+    topology.kubernetes.io/region: baremetal
+    topology.kubernetes.io/zone: ${target_node}
+    %{ if node_group != null }
+    node.home.lab/group: ${node_group}
+    %{ endif }
+
+cluster:
+  allowSchedulingOnControlPlanes: true
+  network:
+    cni:
+      name: none
+    podSubnets: [${pod_subnet}]
+    serviceSubnets: [${service_subnet}]
+  proxy:
+    disabled: true
+  apiServer:
+    image: "registry.k8s.io/kube-apiserver:v${kubernetes_version}"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+  controllerManager:
+    image: "registry.k8s.io/kube-controller-manager:v${kubernetes_version}"
+  scheduler:
+    image: "registry.k8s.io/kube-scheduler:v${kubernetes_version}"
+  externalCloudProvider:
+    enabled: true
+  inlineManifests:
+    ${indent(4, yamlencode(inline_manifests))}

@@ -10,6 +10,13 @@ variable "kubernetes_version" {
   default = "1.33.0"
 }
 
+variable "kubernetes_version_update" {
+  type        = string
+  description = "Optional: The Kubernetes version for updated nodes. Falls back to kubernetes_version if not specified."
+
+  default = null
+}
+
 variable "talos_cp_version" {
   type        = string
   description = "The desired version of Talos to be used in the cluster nodes."
@@ -23,8 +30,14 @@ variable "talos_cp_version_update" {
 }
 
 variable "talos_schematic" {
-  description = "A set of Talos configuration files or schematics to apply during the cluster setup."
+  description = "A set of Talos extensions to apply during the cluster setup."
   type        = set(string)
+}
+
+variable "talos_schematic_update" {
+  description = "Optional: A set of Talos extensions for updated nodes. Falls back to talos_schematic if not specified."
+  type        = set(string)
+  default     = null
 }
 
 variable "talos_factory_url" {
@@ -52,7 +65,8 @@ variable "proxmox_cluster" {
   type = object({
     cluster_name = string
     nodes = map(object({
-      datastore = string
+      datastore     = string
+      iso_datastore = optional(string, null)
     }))
   })
   description = "Proxmox cluster configuration, including the cluster name and the datastore associated with each node."
@@ -80,6 +94,18 @@ variable "controlplanes" {
       address       = optional(string, null)
       dhcp_disabled = optional(bool, false)
     }))
+    kubernetes_version = optional(string)
+    startup = optional(object({
+      order      = number
+      down_delay = number
+      up_delay   = number
+    }), null)
+    extra_mounts = optional(list(object({
+      destination = string
+      source      = string
+      type        = optional(string, "nfs")
+      options     = optional(list(string), ["hard", "nfsvers=4.1"])
+    })), [])
   }))
   description = "Configuration of control plane nodes, including the number of nodes, resources (CPU, RAM), and network configuration."
 }
@@ -87,6 +113,7 @@ variable "controlplanes" {
 variable "workers" {
   type = map(map(object({
     count                = number
+    node_group           = optional(string)
     talos_version        = optional(string)
     talos_version_update = optional(string)
     kubernetes_version   = optional(string)
@@ -109,10 +136,53 @@ variable "workers" {
       rombar  = optional(bool, true)
       xvga    = optional(bool, false)
     })))
+    startup = optional(object({
+      order      = number
+      down_delay = number
+      up_delay   = number
+    }), null)
+    extra_mounts = optional(list(object({
+      destination = string
+      source      = string
+      type        = optional(string, "nfs")
+      options     = optional(list(string), ["hard", "nfsvers=4.1"])
+    })), [])
   })))
 
   default     = {}
   description = "Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details."
+}
+
+variable "baremetal_worker_nodes" {
+  type = map(object({
+    node_group           = string
+    talos_version        = optional(string)
+    talos_version_update = optional(string)
+    kubernetes_version   = optional(string)
+    sysctls              = optional(map(string), {})
+    ipv4_addresses       = optional(string, null)
+    capabilities         = optional(list(string), [])
+    enable_taints        = optional(bool, true)
+    install_disk         = optional(string, "/dev/sda")
+    install_wipe         = optional(bool, true)
+    networks = optional(list(object({
+      bridge        = string
+      tag           = number
+      interface     = string
+      model         = optional(string, "virtio")
+      address       = optional(string, null)
+      dhcp_disabled = optional(bool, false)
+    })), [])
+    extra_mounts = optional(list(object({
+      destination = string
+      source      = string
+      type        = optional(string, "nfs")
+      options     = optional(list(string), ["hard", "nfsvers=4.1"])
+    })), [])
+  }))
+
+  default  = null
+  nullable = true
 }
 
 variable "vm_subnet" {
@@ -241,6 +311,13 @@ variable "cilium_values" {
 variable "sysctls" {
   type        = map(string)
   description = "A map of sysctl settings to be applied to the nodes in the cluster. These settings can be used to tune kernel parameters for performance or security."
+
+  default = {}
+}
+
+variable "machine_features" {
+  type        = map(any)
+  description = "Additional machine.features as HCL object to be applied to all nodes."
 
   default = {}
 }

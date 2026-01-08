@@ -31,6 +31,15 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
+  dynamic "startup" {
+    for_each = var.startup != null ? [var.startup] : []
+    content {
+      order      = var.startup.order
+      down_delay = var.startup.down_delay
+      up_delay   = var.startup.up_delay
+    }
+  }
+
   disk {
     datastore_id = var.datastore
     file_id      = var.image
