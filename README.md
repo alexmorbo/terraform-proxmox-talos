@@ -160,7 +160,7 @@ module "talos_cluster" {
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
 | <a name="requirement_local"></a> [local](#requirement\_local) | >= 2.5.2 |
 | <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | >= 0.76.1 |
-| <a name="requirement_talos"></a> [talos](#requirement\_talos) | >= 0.8.0, < 0.9.0 |
+| <a name="requirement_talos"></a> [talos](#requirement\_talos) | >= 0.8.0, < 0.10.0 |
 
 ## Providers
 

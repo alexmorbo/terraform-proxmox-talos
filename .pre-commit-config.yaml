@@ -17,7 +17,7 @@ repos:
       name: Autoupdate talos versions
       args:
         - --args=provider talos
-        - --args=--version ">= 0.8.0, < 0.9.0"
+        - --args=--version ">= 0.8.0, < 0.10.0"
         - --args=--recursive
     - id: tfupdate
       name: Autoupdate local versions
