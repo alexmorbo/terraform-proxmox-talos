@@ -13,7 +13,7 @@ machine:
     clusterDNS:
       - "${cidrhost(service_subnet, 10)}"
     nodeIP:
-      validSubnets: ["${vm_subnet}"]
+      validSubnets: [%{ for i, net in networks }%{ if net.subnet != null }"${net.subnet}"%{ if i < length(networks) - 1 }, %{ endif }%{ endif }%{ endfor }]
 %{ if length(extra_mounts) > 0 ~}
     extraMounts:
 %{ for mount in extra_mounts ~}
@@ -49,21 +49,34 @@ machine:
     %{~ for network in networks ~}
       - interface: ${network.interface}
         %{~ if network.address != null ~}
-        addresses: [${network.address}/${split("/", vm_subnet)[1]}]
+        addresses: [${network.address}/${network.subnet != null ? split("/", network.subnet)[1] : split("/", vm_subnet)[1]}]
         %{ endif }
         %{~ if network.address != null || network.dhcp_disabled == true ~}
         dhcp: false
         %{ else }
         dhcp: true
         %{ endif }
+        %{~ if network.gateway != null ~}
+        routes:
+          - network: 0.0.0.0/0
+            gateway: ${network.gateway}
+        %{ endif }
+
+    %{~ endfor ~}
+    nameservers:
+    %{~ for dns_server in dns ~}
+      - ${dns_server}
 
     %{~ endfor ~}
   nodeLabels:
-    topology.kubernetes.io/region: baremetal
+    topology.kubernetes.io/region: external
     topology.kubernetes.io/zone: ${target_node}
     %{ if node_group != null }
     node.home.lab/group: ${node_group}
     %{ endif }
+  features:
+    hostDNS:
+      enabled: false
 
 cluster:
   allowSchedulingOnControlPlanes: true
@@ -85,6 +98,6 @@ cluster:
   scheduler:
     image: "registry.k8s.io/kube-scheduler:v${kubernetes_version}"
   externalCloudProvider:
-    enabled: true
+    enabled: false
   inlineManifests:
     ${indent(4, yamlencode(inline_manifests))}

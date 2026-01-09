@@ -67,6 +67,15 @@ locals {
         ]
       ]) : vm_data.key => vm_data.value
     },
+    # External workers
+    {
+      for vm_data in flatten([
+        for node, node_config in local.external_workers : {
+          key   = node
+          value = coalesce(lookup(node_config, "kubernetes_version", null), local.kubernetes_version)
+        }
+      ]) : vm_data.key => vm_data.value
+    },
   )
 
   datastores_per_node = { for node_name, node in var.proxmox_cluster.nodes : node_name => node.datastore }
@@ -116,9 +125,10 @@ locals {
     }
   }
 
-  baremetal_workers = {
-    for node, node_config in(var.baremetal_worker_nodes != null ? var.baremetal_worker_nodes : {}) : "${var.cluster_name}-bm-${node}" => {
+  external_workers = {
+    for node, node_config in(var.external_worker_nodes != null ? var.external_worker_nodes : {}) : "${var.cluster_name}-ext-${node}" => {
       type                 = "worker"
+      architecture         = node_config.architecture
       talos_version        = node_config.talos_version
       talos_version_update = node_config.talos_version_update
       kubernetes_version   = node_config.kubernetes_version
@@ -260,8 +270,8 @@ locals {
   }
 
   # IP addresses for bare-metal nodes from static configuration
-  baremetal_node_ips = {
-    for node, config in local.baremetal_workers :
+  external_node_ips = {
+    for node, config in local.external_workers :
     node => [config.networks[0].address]
   }
 
@@ -274,7 +284,7 @@ locals {
         if cidrhost("${ip}/${split("/", var.vm_subnet)[1]}", 1) == var.default_gateway && ip != var.cluster_vip
       ]
     },
-    local.baremetal_node_ips
+    local.external_node_ips
   )
 
   # All IPs including VM and bare-metal nodes
@@ -286,7 +296,7 @@ locals {
         if cidrhost("${ip}/${split("/", var.vm_subnet)[1]}", 1) == var.default_gateway && ip != var.cluster_vip
       ]
     ],
-    [for node, ips in local.baremetal_node_ips : ips]
+    [for node, ips in local.external_node_ips : ips]
   )))
 
   controlplane_nodes = [

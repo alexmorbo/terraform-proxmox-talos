@@ -42,21 +42,22 @@ data "talos_machine_configuration" "this" {
   ]
 }
 
-data "talos_machine_configuration" "baremetal" {
-  for_each = local.baremetal_workers
+data "talos_machine_configuration" "external" {
+  for_each = local.external_workers
 
   cluster_name     = var.cluster_name
   cluster_endpoint = "https://${var.cluster_vip}:6443"
   machine_type     = each.value.type
   machine_secrets  = talos_machine_secrets.this.machine_secrets
   config_patches = [
-    templatefile("${path.module}/talos/baremetal_machineconfig.yaml.tftpl", {
+    templatefile("${path.module}/talos/external_machineconfig.yaml.tftpl", {
       hostname           = each.key
       type               = each.value.type
       kubernetes_version = local.node_kubernetes_versions[each.key]
       vm_subnet          = var.vm_subnet
       pod_subnet         = var.pod_subnet
       service_subnet     = var.service_subnet
+      dns                = var.dns
       networks           = each.value.networks
       target_node        = each.value.target_node
       node_group         = each.value.node_group
@@ -93,11 +94,11 @@ resource "talos_machine_configuration_apply" "this" {
   }
 }
 
-resource "talos_machine_configuration_apply" "baremetal" {
-  for_each = local.baremetal_workers
+resource "talos_machine_configuration_apply" "external" {
+  for_each = local.external_workers
 
   client_configuration        = data.talos_client_configuration.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.baremetal[each.key].machine_configuration
+  machine_configuration_input = data.talos_machine_configuration.external[each.key].machine_configuration
   node                        = each.value.networks[0].address
   # apply_mode                  = "reboot"
 
@@ -112,7 +113,7 @@ resource "talos_machine_configuration_apply" "baremetal" {
 # data "talos_cluster_health" "this" {
 #   depends_on = [
 #     talos_machine_configuration_apply.this,
-#     talos_machine_configuration_apply.baremetal
+#     talos_machine_configuration_apply.external
 #   ]
 
 #   client_configuration = talos_machine_secrets.this.client_configuration
@@ -130,7 +131,7 @@ resource "talos_machine_configuration_apply" "baremetal" {
 resource "talos_machine_bootstrap" "this" {
   depends_on = [
     talos_machine_configuration_apply.this,
-    talos_machine_configuration_apply.baremetal
+    talos_machine_configuration_apply.external
   ]
 
   client_configuration = data.talos_client_configuration.this.client_configuration

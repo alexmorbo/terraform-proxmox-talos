@@ -153,9 +153,10 @@ variable "workers" {
   description = "Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details."
 }
 
-variable "baremetal_worker_nodes" {
+variable "external_worker_nodes" {
   type = map(object({
     node_group           = string
+    architecture         = optional(string, "amd64")
     talos_version        = optional(string)
     talos_version_update = optional(string)
     kubernetes_version   = optional(string)
@@ -171,6 +172,8 @@ variable "baremetal_worker_nodes" {
       interface     = string
       model         = optional(string, "virtio")
       address       = optional(string, null)
+      subnet        = optional(string, null) # CIDR subnet for this network (e.g., "10.90.11.0/24")
+      gateway       = optional(string, null) # Default gateway for this network
       dhcp_disabled = optional(bool, false)
     })), [])
     extra_mounts = optional(list(object({
