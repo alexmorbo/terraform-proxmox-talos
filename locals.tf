@@ -60,7 +60,14 @@ locals {
               cpus        = cp_config.cpu
               memory      = cp_config.ram
               sysctls     = cp_config.sysctls
-              networks    = cp_config.networks
+              networks = [
+                for net in cp_config.networks : merge(net, {
+                  address = net.address != null ? join(".", concat(
+                    slice(split(".", net.address), 0, 3),
+                    [tostring(tonumber(element(split(".", net.address), 3)) + i)]
+                  )) : null
+                })
+              ]
               image       = proxmox_virtual_environment_download_file.talos_image["${node_key}_${local.talos_version}"].id
               bootstrap   = (node_key == local.first_controlplane_node_key && i == 0)
               target_node = node_key
@@ -82,7 +89,14 @@ locals {
               cpus        = cp_config.cpu
               memory      = cp_config.ram
               sysctls     = cp_config.sysctls
-              networks    = cp_config.networks
+              networks = [
+                for net in cp_config.networks : merge(net, {
+                  address = net.address != null ? join(".", concat(
+                    slice(split(".", net.address), 0, 3),
+                    [tostring(tonumber(element(split(".", net.address), 3)) + i)]
+                  )) : null
+                })
+              ]
               image       = proxmox_virtual_environment_download_file.talos_image["${node_key}_${local.talos_version_update}"].id
               bootstrap   = false
               target_node = node_key
