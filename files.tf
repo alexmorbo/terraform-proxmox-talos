@@ -8,4 +8,5 @@ resource "proxmox_virtual_environment_download_file" "talos_image" {
   url                     = each.value.url
   decompression_algorithm = each.value.decompression_algorithm
   overwrite               = false
+  overwrite_unmanaged     = true
 }
