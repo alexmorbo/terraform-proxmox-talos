@@ -68,6 +68,7 @@ variable "dns" {
 variable "controlplanes" {
   type = map(object({
     count   = number
+    vm_id   = optional(number, null)
     socket  = optional(number, 1)
     cpu     = optional(number, 4)
     ram     = optional(number, 8192)
@@ -87,6 +88,7 @@ variable "controlplanes" {
 variable "workers" {
   type = map(map(object({
     count                = number
+    vm_id                = optional(number, null)
     talos_version        = optional(string)
     talos_version_update = optional(string)
     kubernetes_version   = optional(string)

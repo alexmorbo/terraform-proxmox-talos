@@ -8,6 +8,7 @@ module "vm" {
 
   cluster_name = var.cluster_name
   name         = each.key
+  vm_id        = each.value.vm_id
   node_type    = each.value.type
   node_group   = each.value.node_group
   target_node  = each.value.target_node

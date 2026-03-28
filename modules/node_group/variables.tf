@@ -16,6 +16,7 @@ variable "nodes" {
   type = list(object({
     name        = string
     type        = string
+    vm_id       = optional(number, null)
     target_node = string
     datastore   = string
     image       = string

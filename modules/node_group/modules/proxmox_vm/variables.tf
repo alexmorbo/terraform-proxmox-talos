@@ -6,6 +6,11 @@ variable "name" {
   type = string
 }
 
+variable "vm_id" {
+  type    = number
+  default = null
+}
+
 variable "node_type" {
   type = string
 }

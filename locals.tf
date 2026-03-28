@@ -56,6 +56,7 @@ locals {
 
             value = {
               type        = "controlplane"
+              vm_id       = cp_config.vm_id != null ? cp_config.vm_id + i : null
               sockets     = cp_config.socket
               cpus        = cp_config.cpu
               memory      = cp_config.ram
@@ -85,6 +86,7 @@ locals {
 
             value = {
               type        = "controlplane"
+              vm_id       = cp_config.vm_id != null ? cp_config.vm_id + i : null
               sockets     = cp_config.socket
               cpus        = cp_config.cpu
               memory      = cp_config.ram
@@ -116,6 +118,7 @@ locals {
               value = {
                 type            = "worker"
                 from            = "init"
+                vm_id           = worker_config.vm_id != null ? worker_config.vm_id + i : null
                 sockets         = worker_config.socket
                 cpus            = worker_config.cpu
                 memory          = worker_config.ram
@@ -148,6 +151,7 @@ locals {
               value = {
                 type            = "worker"
                 from            = "update"
+                vm_id           = worker_config.vm_id != null ? worker_config.vm_id + i : null
                 sockets         = worker_config.socket
                 cpus            = worker_config.cpu
                 memory          = worker_config.ram

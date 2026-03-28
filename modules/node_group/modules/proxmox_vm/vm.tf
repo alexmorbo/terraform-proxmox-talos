@@ -1,5 +1,6 @@
 resource "proxmox_virtual_environment_vm" "vm" {
   name        = var.name
+  vm_id       = var.vm_id
   description = "Managed by Terraform"
   on_boot     = true
   machine     = "q35"
