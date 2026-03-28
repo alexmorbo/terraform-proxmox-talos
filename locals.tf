@@ -120,7 +120,14 @@ locals {
                 cpus            = worker_config.cpu
                 memory          = worker_config.ram
                 sysctls         = worker_config.sysctls
-                networks        = worker_config.networks
+                networks = [
+                  for net in worker_config.networks : merge(net, {
+                    address = net.address != null ? join(".", concat(
+                      slice(split(".", net.address), 0, 3),
+                      [tostring(tonumber(element(split(".", net.address), 3)) + i)]
+                    )) : null
+                  })
+                ]
                 pci_passthrough = worker_config.pci_passthrough
                 image           = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version}"].id
                 node_group      = node_group
@@ -145,7 +152,14 @@ locals {
                 cpus            = worker_config.cpu
                 memory          = worker_config.ram
                 sysctls         = worker_config.sysctls
-                networks        = worker_config.networks
+                networks = [
+                  for net in worker_config.networks : merge(net, {
+                    address = net.address != null ? join(".", concat(
+                      slice(split(".", net.address), 0, 3),
+                      [tostring(tonumber(element(split(".", net.address), 3)) + i)]
+                    )) : null
+                  })
+                ]
                 pci_passthrough = worker_config.pci_passthrough
                 image           = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version_update}"].id
                 node_group      = node_group
