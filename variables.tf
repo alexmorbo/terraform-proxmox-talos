@@ -81,11 +81,13 @@ variable "dns" {
 
 variable "controlplanes" {
   type = map(object({
-    count   = number
-    socket  = optional(number, 1)
-    cpu     = optional(number, 4)
-    ram     = optional(number, 8192)
-    sysctls = optional(map(string), {})
+    count           = number
+    socket          = optional(number, 1)
+    cpu             = optional(number, 4)
+    ram             = optional(number, 8192)
+    balloon_enabled = optional(bool, false)
+    min_memory      = optional(number, null)
+    sysctls         = optional(map(string), {})
     networks = list(object({
       interface     = string
       bridge        = string
@@ -100,12 +102,6 @@ variable "controlplanes" {
       down_delay = number
       up_delay   = number
     }), null)
-    extra_mounts = optional(list(object({
-      destination = string
-      source      = string
-      type        = optional(string, "nfs")
-      options     = optional(list(string), ["hard", "nfsvers=4.1"])
-    })), [])
   }))
   description = "Configuration of control plane nodes, including the number of nodes, resources (CPU, RAM), and network configuration."
 }
@@ -113,6 +109,7 @@ variable "controlplanes" {
 variable "workers" {
   type = map(map(object({
     count                = number
+    datastore            = optional(string, null)
     node_group           = optional(string)
     talos_version        = optional(string)
     talos_version_update = optional(string)
@@ -120,7 +117,10 @@ variable "workers" {
     socket               = optional(number, 1)
     cpu                  = optional(number, 4)
     ram                  = optional(number, 8192)
+    balloon_enabled      = optional(bool, false)
+    min_memory           = optional(number, null)
     sysctls              = optional(map(string), {})
+    extra_kernel_args    = optional(list(string), [])
     networks = list(object({
       bridge        = string
       tag           = optional(number, null)
@@ -141,12 +141,6 @@ variable "workers" {
       down_delay = number
       up_delay   = number
     }), null)
-    extra_mounts = optional(list(object({
-      destination = string
-      source      = string
-      type        = optional(string, "nfs")
-      options     = optional(list(string), ["hard", "nfsvers=4.1"])
-    })), [])
   })))
 
   default     = {}
@@ -175,12 +169,6 @@ variable "external_worker_nodes" {
       subnet        = optional(string, null) # CIDR subnet for this network (e.g., "10.90.11.0/24")
       gateway       = optional(string, null) # Default gateway for this network
       dhcp_disabled = optional(bool, false)
-    })), [])
-    extra_mounts = optional(list(object({
-      destination = string
-      source      = string
-      type        = optional(string, "nfs")
-      options     = optional(list(string), ["hard", "nfsvers=4.1"])
     })), [])
   }))
 
@@ -323,4 +311,14 @@ variable "machine_features" {
   description = "Additional machine.features as HCL object to be applied to all nodes."
 
   default = {}
+}
+
+variable "static_routes" {
+  type = list(object({
+    network = string
+    gateway = string
+  }))
+  description = "Static routes to add to all node interfaces."
+
+  default = []
 }

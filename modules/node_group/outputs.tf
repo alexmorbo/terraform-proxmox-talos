@@ -7,8 +7,9 @@ output "nodes" {
       node_group         = node.node_group
       vm                 = node.node
       sysctls            = node.sysctls
+      extra_kernel_args  = { for n in var.nodes : n.name => n.extra_kernel_args }[node_name]
       kubernetes_version = node.kubernetes_version
-      extra_mounts       = node.extra_mounts
+      balloon_enabled    = node.balloon_enabled
     }
   }
 }

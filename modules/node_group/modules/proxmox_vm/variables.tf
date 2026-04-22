@@ -44,6 +44,20 @@ variable "memory" {
   default = 2048
 }
 
+variable "balloon_enabled" {
+  type        = bool
+  description = "Enable memory ballooning device"
+
+  default = false
+}
+
+variable "min_memory" {
+  type        = number
+  description = "Minimum memory in MB when balloon is enabled"
+
+  default = null
+}
+
 variable "sysctls" {
   type = map(string)
 
@@ -101,15 +115,4 @@ variable "startup" {
   })
 
   default = null
-}
-
-variable "extra_mounts" {
-  type = list(object({
-    destination = string
-    source      = string
-    type        = optional(string, "nfs")
-    options     = optional(list(string), ["hard", "nfsvers=4.1"])
-  }))
-
-  default = []
 }

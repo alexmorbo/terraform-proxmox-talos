@@ -21,8 +21,9 @@ module "vm" {
   sockets         = each.value.sockets
   cores           = each.value.cores
   memory          = each.value.memory
+  balloon_enabled = each.value.balloon_enabled
+  min_memory      = each.value.min_memory
   networks        = each.value.networks
   pci_passthrough = each.value.pci_passthrough
   startup         = each.value.startup
-  extra_mounts    = each.value.extra_mounts
 }

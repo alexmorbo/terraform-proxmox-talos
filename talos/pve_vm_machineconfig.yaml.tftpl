@@ -1,8 +1,18 @@
 machine:
+%{ if balloon_enabled ~}
+  kernel:
+    modules:
+      - name: virtio_balloon
+%{ endif ~}
   install:
     %{ if type == "worker" }
     wipe: true
-    %{ endif }
+    %{ endif }%{ if length(extra_kernel_args) > 0 }
+    extraKernelArgs:
+%{ for arg in extra_kernel_args ~}
+      - ${arg}
+%{ endfor ~}
+%{ endif }
   kubelet:
     image: "ghcr.io/siderolabs/kubelet:v${kubernetes_version}"
     extraArgs:
@@ -14,18 +24,6 @@ machine:
       - "${cidrhost(service_subnet, 10)}"
     nodeIP:
       validSubnets: ["${vm_subnet}"]
-%{ if length(extra_mounts) > 0 ~}
-    extraMounts:
-%{ for mount in extra_mounts ~}
-      - destination: ${mount.destination}
-        type: ${mount.type}
-        source: ${mount.source}
-        options:
-%{ for opt in mount.options ~}
-          - ${opt}
-%{ endfor ~}
-%{ endfor ~}
-%{ endif ~}
   %{ if length(sysctls) > 0 }
   sysctls:
   %{ for syskey, sysvalue in sysctls }
@@ -33,7 +31,6 @@ machine:
   %{ endfor }
   %{ endif }
   network:
-    hostname: ${hostname}
     interfaces:
     %{~ for network in networks ~}
       - interface: ${network.interface}
@@ -49,6 +46,13 @@ machine:
         vip:
           ip: "${cluster_vip}"
         %{ endif }
+        %{~ if length(static_routes) > 0 }
+        routes:
+        %{~ for route in static_routes }
+          - network: ${route.network}
+            gateway: ${route.gateway}
+        %{~ endfor }
+        %{~ endif }
 
     %{~ endfor ~}
     nameservers:

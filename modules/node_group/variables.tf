@@ -22,10 +22,13 @@ variable "nodes" {
     node_group         = optional(string)
     kubernetes_version = optional(string)
 
-    sockets = optional(number, 1)
-    cores   = optional(number, 4)
-    memory  = optional(number, 2048)
-    sysctls = optional(map(string), {})
+    sockets           = optional(number, 1)
+    cores             = optional(number, 4)
+    memory            = optional(number, 2048)
+    balloon_enabled   = optional(bool, false)
+    min_memory        = optional(number, null)
+    sysctls           = optional(map(string), {})
+    extra_kernel_args = optional(list(string), [])
     networks = list(object({
       interface     = string
       bridge        = string
@@ -46,11 +49,5 @@ variable "nodes" {
       down_delay = number
       up_delay   = number
     }), null)
-    extra_mounts = optional(list(object({
-      destination = string
-      source      = string
-      type        = optional(string, "nfs")
-      options     = optional(list(string), ["hard", "nfsvers=4.1"])
-    })), [])
   }))
 }

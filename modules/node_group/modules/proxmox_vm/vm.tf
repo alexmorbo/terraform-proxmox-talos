@@ -16,6 +16,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
   memory {
     dedicated = var.memory
+    floating  = var.balloon_enabled ? coalesce(var.min_memory, var.memory) : 0
   }
 
   agent {
@@ -84,5 +85,9 @@ resource "proxmox_virtual_environment_vm" "vm" {
       mapping = hostpci.value.mapping
       xvga    = hostpci.value.xvga
     }
+  }
+
+  lifecycle {
+    ignore_changes = [disk[0].file_id]
   }
 }

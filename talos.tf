@@ -6,40 +6,91 @@ data "talos_client_configuration" "this" {
   endpoints            = flatten([for node in local.controlplane_nodes : local.node_ips[node.name]])
 }
 
-data "talos_machine_configuration" "this" {
-  for_each = merge(module.control_plane.nodes, local.all_worker_nodes)
+locals {
+  talos_config_common = {
+    cluster_name         = var.cluster_name
+    cluster_vip          = var.cluster_vip
+    vm_subnet            = var.vm_subnet
+    pod_subnet           = var.pod_subnet
+    service_subnet       = var.service_subnet
+    dns                  = var.dns
+    proxmox_cluster_name = var.proxmox_cluster.cluster_name
+    sysctls              = var.sysctls
+    machine_features     = var.machine_features
+    machine_secrets      = talos_machine_secrets.this.machine_secrets
+    client_configuration = data.talos_client_configuration.this.client_configuration
+    cilium_values        = var.cilium_values
+    config_template_path = "${path.module}/talos/pve_vm_machineconfig.yaml.tftpl"
+    cilium_template_path = "${path.module}/talos/cilium-install.yaml.tftpl"
+    talos_version        = "v${join(".", slice(split(".", var.talos_cp_version), 0, 2))}"
+    static_routes        = var.static_routes
+  }
+}
 
-  cluster_name     = var.cluster_name
-  cluster_endpoint = "https://${var.cluster_vip}:6443"
-  machine_type     = each.value.type
-  machine_secrets  = talos_machine_secrets.this.machine_secrets
-  config_patches = [
-    templatefile("${path.module}/talos/pve_vm_machineconfig.yaml.tftpl", {
-      hostname           = each.key
-      type               = each.value.type
-      kubernetes_version = local.node_kubernetes_versions[each.key]
-      cluster_vip        = var.cluster_vip
-      vm_subnet          = var.vm_subnet
-      pod_subnet         = var.pod_subnet
-      service_subnet     = var.service_subnet
-      networks           = each.value.networks
-      dns                = var.dns
-      proxmox_node       = each.value.target_node
-      proxmox_cluster    = var.proxmox_cluster.cluster_name
-      node_group         = try(each.value.node_group, null)
-      sysctls            = merge(var.sysctls, each.value.sysctls)
-      machine_features   = var.machine_features
-      extra_mounts       = try(each.value.extra_mounts, [])
-      inline_manifests = [
-        {
-          name = "cilium-install"
-          contents = templatefile("${path.module}/talos/cilium-install.yaml.tftpl", {
-            cilium_values = yamlencode(var.cilium_values)
-          })
-        }
-      ]
-    }),
-  ]
+module "controlplane_talos_config" {
+  source     = "./modules/talos_node_config"
+  depends_on = [module.control_plane]
+
+  nodes = module.control_plane.nodes
+  node_ips = {
+    for k, v in module.control_plane.nodes : k => [
+      for ip in flatten(v.vm.ipv4_addresses) : ip
+      if cidrhost("${ip}/${split("/", var.vm_subnet)[1]}", 1) == var.default_gateway && ip != var.cluster_vip
+    ]
+  }
+  node_kubernetes_versions = {
+    for k, _ in module.control_plane.nodes : k => local.node_kubernetes_versions[k]
+  }
+
+  cluster_name         = local.talos_config_common.cluster_name
+  cluster_vip          = local.talos_config_common.cluster_vip
+  vm_subnet            = local.talos_config_common.vm_subnet
+  pod_subnet           = local.talos_config_common.pod_subnet
+  service_subnet       = local.talos_config_common.service_subnet
+  dns                  = local.talos_config_common.dns
+  proxmox_cluster_name = local.talos_config_common.proxmox_cluster_name
+  sysctls              = local.talos_config_common.sysctls
+  machine_features     = local.talos_config_common.machine_features
+  machine_secrets      = local.talos_config_common.machine_secrets
+  client_configuration = local.talos_config_common.client_configuration
+  cilium_values        = local.talos_config_common.cilium_values
+  config_template_path = local.talos_config_common.config_template_path
+  cilium_template_path = local.talos_config_common.cilium_template_path
+  talos_version        = local.talos_config_common.talos_version
+  static_routes        = local.talos_config_common.static_routes
+}
+
+module "worker_talos_config" {
+  source   = "./modules/talos_node_config"
+  for_each = module.worker_node_group
+
+  nodes = each.value.nodes
+  node_ips = {
+    for k, v in each.value.nodes : k => [
+      for ip in flatten(v.vm.ipv4_addresses) : ip
+      if cidrhost("${ip}/${split("/", var.vm_subnet)[1]}", 1) == var.default_gateway && ip != var.cluster_vip
+    ]
+  }
+  node_kubernetes_versions = {
+    for k, _ in each.value.nodes : k => local.node_kubernetes_versions[k]
+  }
+
+  cluster_name         = local.talos_config_common.cluster_name
+  cluster_vip          = local.talos_config_common.cluster_vip
+  vm_subnet            = local.talos_config_common.vm_subnet
+  pod_subnet           = local.talos_config_common.pod_subnet
+  service_subnet       = local.talos_config_common.service_subnet
+  dns                  = local.talos_config_common.dns
+  proxmox_cluster_name = local.talos_config_common.proxmox_cluster_name
+  sysctls              = local.talos_config_common.sysctls
+  machine_features     = local.talos_config_common.machine_features
+  machine_secrets      = local.talos_config_common.machine_secrets
+  client_configuration = local.talos_config_common.client_configuration
+  cilium_values        = local.talos_config_common.cilium_values
+  config_template_path = local.talos_config_common.config_template_path
+  cilium_template_path = local.talos_config_common.cilium_template_path
+  talos_version        = local.talos_config_common.talos_version
+  static_routes        = local.talos_config_common.static_routes
 }
 
 data "talos_machine_configuration" "external" {
@@ -49,6 +100,7 @@ data "talos_machine_configuration" "external" {
   cluster_endpoint = "https://${var.cluster_vip}:6443"
   machine_type     = each.value.type
   machine_secrets  = talos_machine_secrets.this.machine_secrets
+  talos_version    = local.talos_config_common.talos_version
   config_patches = [
     templatefile("${path.module}/talos/external_machineconfig.yaml.tftpl", {
       hostname           = each.key
@@ -66,7 +118,6 @@ data "talos_machine_configuration" "external" {
       has_nvidia         = anytrue([for cap in each.value.capabilities : can(regex("nvidia", cap))])
       install_disk       = each.value.install_disk
       install_wipe       = each.value.install_wipe
-      extra_mounts       = each.value.extra_mounts
       inline_manifests = [
         {
           name = "cilium-install"
@@ -76,22 +127,13 @@ data "talos_machine_configuration" "external" {
         }
       ]
     }),
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "HostnameConfig"
+      hostname   = each.key
+      auto       = "off"
+    }),
   ]
-}
-
-resource "talos_machine_configuration_apply" "this" {
-  for_each = merge(module.control_plane.nodes, local.all_worker_nodes)
-
-  client_configuration        = data.talos_client_configuration.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.this[each.key].machine_configuration
-  node                        = local.node_ips[each.key][0]
-  # apply_mode                  = "reboot"
-
-  on_destroy = {
-    graceful = true
-    reboot   = false
-    reset    = true
-  }
 }
 
 resource "talos_machine_configuration_apply" "external" {
@@ -130,8 +172,9 @@ resource "talos_machine_configuration_apply" "external" {
 
 resource "talos_machine_bootstrap" "this" {
   depends_on = [
-    talos_machine_configuration_apply.this,
-    talos_machine_configuration_apply.external
+    module.controlplane_talos_config,
+    module.worker_talos_config,
+    talos_machine_configuration_apply.external,
   ]
 
   client_configuration = data.talos_client_configuration.this.client_configuration

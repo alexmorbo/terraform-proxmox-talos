@@ -14,18 +14,6 @@ machine:
       - "${cidrhost(service_subnet, 10)}"
     nodeIP:
       validSubnets: [%{ for i, net in networks }%{ if net.subnet != null }"${net.subnet}"%{ if i < length(networks) - 1 }, %{ endif }%{ endif }%{ endfor }]
-%{ if length(extra_mounts) > 0 ~}
-    extraMounts:
-%{ for mount in extra_mounts ~}
-      - destination: ${mount.destination}
-        type: ${mount.type}
-        source: ${mount.source}
-        options:
-%{ for opt in mount.options ~}
-          - ${opt}
-%{ endfor ~}
-%{ endfor ~}
-%{ endif ~}
   %{ if has_nvidia || length(sysctls) > 0 }
   sysctls:
   %{ if has_nvidia }
@@ -44,7 +32,6 @@ machine:
       - name: nvidia_modeset
   %{ endif }
   network:
-    hostname: ${hostname}
     interfaces:
     %{~ for network in networks ~}
       - interface: ${network.interface}

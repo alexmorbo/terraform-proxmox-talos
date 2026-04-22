@@ -15,13 +15,16 @@ output "node_group" {
 }
 
 output "node" {
-  value = proxmox_virtual_environment_vm.vm
-}
-
-output "extra_mounts" {
-  value = var.extra_mounts
+  value = {
+    name           = proxmox_virtual_environment_vm.vm.name
+    ipv4_addresses = proxmox_virtual_environment_vm.vm.ipv4_addresses
+  }
 }
 
 output "kubernetes_version" {
   value = var.kubernetes_version
+}
+
+output "balloon_enabled" {
+  value = var.balloon_enabled
 }
