@@ -50,7 +50,7 @@ locals {
         for node_key, node_group_config in local.workers : [
           for node_group, worker_config in node_group_config : [
             for i in range(worker_config.count) : {
-              key   = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version}${local.schematic_fingerprint}"), 0, 7)}"
+              key   = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version}${worker_config.schematic_fingerprint}"), 0, 7)}"
               value = coalesce(lookup(worker_config, "kubernetes_version", null), local.kubernetes_version)
             }
           ]
@@ -63,7 +63,7 @@ locals {
         for node_key, node_group_config in local.workers : [
           for node_group, worker_config in node_group_config : [
             for i in(worker_config.is_update ? range(worker_config.count) : []) : {
-              key   = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version_update}${local.schematic_fingerprint_update}"), 0, 7)}"
+              key   = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version_update}${worker_config.schematic_fingerprint_update}"), 0, 7)}"
               value = coalesce(lookup(worker_config, "kubernetes_version", null), local.kubernetes_version_update)
             }
           ]
@@ -97,33 +97,48 @@ locals {
         extensions = local.talos_schematic_update
       }
     },
+    # Per-worker current images. Non-override workers collapse onto the
+    # cluster-wide entry thanks to identical version+fingerprint keys.
+    # Key is content-derived (version + sha(extensions)), so collisions
+    # are always safe: we pick the first grouped value.
     {
-      for v in toset(flatten([
-        for group, pve_node_workers in var.workers : [
-          for node_group, node_config in pve_node_workers :
-          coalesce(lookup(node_config, "talos_version", null), local.talos_version)
-        ]
-        ])) : "${v}_${local.schematic_fingerprint}" => {
-        version    = v
-        extensions = local.talos_schematic
-      }
+      for k, group in {
+        for entry in flatten([
+          for group, pve_node_workers in local.workers : [
+            for node_group, wc in pve_node_workers : {
+              key = "${wc.talos_version}_${wc.schematic_fingerprint}"
+              value = {
+                version    = wc.talos_version
+                extensions = wc.talos_schematic
+              }
+            }
+          ]
+        ]) : entry.key => entry.value...
+      } : k => group[0]
     },
+    # Per-worker update images.
     {
-      for v in toset(flatten([
-        for group, pve_node_workers in var.workers : [
-          for node_group, node_config in pve_node_workers :
-          coalesce(
-            lookup(node_config, "talos_version_update", null),
-            coalesce(lookup(node_config, "talos_version", null), local.talos_version)
-          )
-        ]
-        ])) : "${v}_${local.schematic_fingerprint_update}" => {
-        version    = v
-        extensions = local.talos_schematic_update
-      }
-    }
+      for k, group in {
+        for entry in flatten([
+          for group, pve_node_workers in local.workers : [
+            for node_group, wc in pve_node_workers : {
+              key = "${wc.talos_version_update}_${wc.schematic_fingerprint_update}"
+              value = {
+                version    = wc.talos_version_update
+                extensions = wc.talos_schematic_update
+              }
+            }
+          ]
+        ]) : entry.key => entry.value...
+      } : k => group[0]
+    },
   )
 
+  # Resolved per-worker talos/schematic state. Extracted so that version,
+  # schematic, fingerprint and is_update share the same source of truth.
+  # Non-override workers fall back to cluster-wide values; fingerprints are
+  # identical to cluster fingerprints in that case, so node name hashes
+  # stay stable (idempotent refactor).
   workers = {
     for group, pve_node_workers in var.workers : group => {
       for node_group, node_config in pve_node_workers : node_group => merge(node_config, {
@@ -132,13 +147,38 @@ locals {
           lookup(node_config, "talos_version_update", null),
           coalesce(lookup(node_config, "talos_version", null), local.talos_version)
         )
+        talos_schematic = coalesce(
+          lookup(node_config, "talos_schematic", null),
+          local.talos_schematic
+        )
+        talos_schematic_update = coalesce(
+          lookup(node_config, "talos_schematic_update", null),
+          lookup(node_config, "talos_schematic", null),
+          local.talos_schematic_update
+        )
+        schematic_fingerprint = substr(sha256(jsonencode(sort(tolist(coalesce(
+          lookup(node_config, "talos_schematic", null),
+          local.talos_schematic
+        ))))), 0, 8)
+        schematic_fingerprint_update = substr(sha256(jsonencode(sort(tolist(coalesce(
+          lookup(node_config, "talos_schematic_update", null),
+          lookup(node_config, "talos_schematic", null),
+          local.talos_schematic_update
+        ))))), 0, 8)
         is_update = (
           coalesce(lookup(node_config, "talos_version", null), local.talos_version)
           != coalesce(
             lookup(node_config, "talos_version_update", null),
             coalesce(lookup(node_config, "talos_version", null), local.talos_version)
           )
-        ) || local.talos_schematic != local.talos_schematic_update
+          ) || (
+          coalesce(lookup(node_config, "talos_schematic", null), local.talos_schematic)
+          != coalesce(
+            lookup(node_config, "talos_schematic_update", null),
+            lookup(node_config, "talos_schematic", null),
+            local.talos_schematic_update
+          )
+        )
       })
     }
   }
@@ -186,7 +226,7 @@ locals {
               min_memory         = cp_config.min_memory
               sysctls            = cp_config.sysctls
               networks           = cp_config.networks
-              image              = proxmox_virtual_environment_download_file.talos_image["${node_key}_${local.talos_version}_${local.schematic_fingerprint}"].id
+              image              = local.talos_image_ids["${node_key}_${local.talos_version}_${local.schematic_fingerprint}"]
               target_node        = node_key
               datastore          = local.datastores_per_node[node_key]
               startup            = cp_config.startup
@@ -211,7 +251,7 @@ locals {
               min_memory         = cp_config.min_memory
               sysctls            = cp_config.sysctls
               networks           = cp_config.networks
-              image              = proxmox_virtual_environment_download_file.talos_image["${node_key}_${local.talos_version_update}_${local.schematic_fingerprint_update}"].id
+              image              = local.talos_image_ids["${node_key}_${local.talos_version_update}_${local.schematic_fingerprint_update}"]
               target_node        = node_key
               datastore          = local.datastores_per_node[node_key]
               startup            = cp_config.startup
@@ -226,7 +266,7 @@ locals {
         for node_key, node_group_config in local.workers : [
           for node_group, worker_config in node_group_config : [
             for i in range(worker_config.count) : {
-              key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version}${local.schematic_fingerprint}"), 0, 7)}"
+              key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version}${worker_config.schematic_fingerprint}"), 0, 7)}"
 
               value = {
                 type               = "worker"
@@ -241,7 +281,7 @@ locals {
                 networks           = worker_config.networks
                 pci_passthrough    = worker_config.pci_passthrough
                 startup            = worker_config.startup
-                image              = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version}_${local.schematic_fingerprint}"].id
+                image              = local.talos_image_ids["${node_key}_${worker_config.talos_version}_${worker_config.schematic_fingerprint}"]
                 node_group         = coalesce(worker_config.node_group, node_group)
                 target_node        = node_key
                 datastore          = coalesce(worker_config.datastore, local.datastores_per_node[node_key])
@@ -257,7 +297,7 @@ locals {
         for node_key, node_group_config in local.workers : [
           for node_group, worker_config in node_group_config : [
             for i in(worker_config.is_update ? range(worker_config.count) : []) : {
-              key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version_update}${local.schematic_fingerprint_update}"), 0, 7)}"
+              key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version_update}${worker_config.schematic_fingerprint_update}"), 0, 7)}"
 
               value = {
                 type               = "worker"
@@ -272,7 +312,7 @@ locals {
                 networks           = worker_config.networks
                 pci_passthrough    = worker_config.pci_passthrough
                 startup            = worker_config.startup
-                image              = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version_update}_${local.schematic_fingerprint_update}"].id
+                image              = local.talos_image_ids["${node_key}_${worker_config.talos_version_update}_${worker_config.schematic_fingerprint_update}"]
                 node_group         = coalesce(worker_config.node_group, node_group)
                 target_node        = node_key
                 datastore          = coalesce(worker_config.datastore, local.datastores_per_node[node_key])
@@ -346,9 +386,19 @@ locals {
     node.node_group => node...
   }
 
+  # Single source of truth for image file names. Both the download_file
+  # resource (files.tf, via local.images → local.image_per_pve_node) and
+  # the precomputed Proxmox file ID (local.talos_image_ids) derive from
+  # here, so a rename in one place can't silently diverge from the
+  # other.
+  image_file_names = {
+    for key, config in local.all_image_configs :
+    key => "talos-${config.version}-${key}-${var.talos_platform}-${var.talos_arch}.img"
+  }
+
   images = {
     for key, config in local.all_image_configs : key => {
-      file_name               = "talos-${config.version}-${key}-${var.talos_platform}-${var.talos_arch}.img"
+      file_name               = local.image_file_names[key]
       url                     = "${var.talos_factory_url}/image/${talos_image_factory_schematic.this[key].id}/${config.version}/${var.talos_platform}-${var.talos_arch}.raw.gz"
       decompression_algorithm = "gz"
     }
@@ -364,6 +414,30 @@ locals {
               node      = node_name
               datastore = node.iso_datastore != null ? node.iso_datastore : node.datastore
             }
+          )
+        }
+      ]
+    ]) : pair.key => pair.value
+  }
+
+  # Pre-computed Proxmox file IDs, derived WITHOUT reference to the
+  # download resource or local.images (whose `url` transitively depends
+  # on talos_image_factory_schematic and would propagate "unknown"
+  # through the whole map). This breaks the graph dependency from
+  # VM.image to the download resource, so adding a new image entry no
+  # longer forces Terraform to re-read existing control-plane data
+  # sources (false-positive in-place updates).
+  #
+  # Proxmox download_file ID format is stable: "<datastore>:iso/<file_name>".
+  talos_image_ids = {
+    for pair in flatten([
+      for node_name, node in var.proxmox_cluster.nodes : [
+        for image_key, _ in local.all_image_configs : {
+          key = "${node_name}_${image_key}"
+          value = format(
+            "%s:iso/%s",
+            node.iso_datastore != null ? node.iso_datastore : node.datastore,
+            local.image_file_names[image_key],
           )
         }
       ]

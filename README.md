@@ -121,7 +121,7 @@ module "talos_cluster" {
         ]
       }
     }
-    node-2 = {
+    node-3 = {
       ingress = {
         count = 1
         cpu   = 2
@@ -133,6 +133,56 @@ module "talos_cluster" {
           },
         ]
       }
+    }
+  }
+}
+```
+
+## Per-worker schematic override
+
+A worker definition may override the cluster-wide `talos_schematic` /
+`talos_schematic_update` by setting them on the worker object. This is
+useful to pin a different set of Talos extensions for a single
+node-group (e.g. `siderolabs/i915` on a media group) without forcing a
+rolling image replacement across the rest of the cluster.
+
+Resolution rules, per worker:
+
+- `effective_schematic`        = `worker.talos_schematic` ?? `var.talos_schematic`
+- `effective_schematic_update` = `worker.talos_schematic_update` ?? `worker.talos_schematic` ?? `var.talos_schematic_update`
+
+Consequences:
+
+- Setting **only** `talos_schematic_update` on a worker is the common
+  case (phased rollout of extra extensions for one group).
+- Setting **only** `talos_schematic` on a worker collapses both
+  current and update to that value for this group: the worker **opts
+  out of cluster-wide `talos_schematic_update` rollouts**. This
+  matches the behaviour of worker-level `talos_version`; if you want
+  the group to participate in cluster schematic updates, leave
+  `talos_schematic` unset and only pin `talos_schematic_update`.
+- Setting both to the same value is a no-op (same as no override).
+
+Workers without either override produce the same schematic fingerprint
+as the cluster, so their VM name hashes are stable — introducing a
+per-worker override on one group does not rename or recreate any
+other workers or control-plane nodes.
+
+Example — enable `siderolabs/i915` on the `media` group only:
+
+```hcl
+workers = {
+  node-1 = {
+    media = {
+      count         = 1
+      talos_version = "1.12.5"
+      talos_schematic_update = [
+        "siderolabs/amd-ucode",
+        "siderolabs/nfs-utils",
+        "siderolabs/qemu-guest-agent",
+        "siderolabs/i915",
+      ]
+      # ...
     }
   }
 }
@@ -226,7 +276,7 @@ module "talos_cluster" {
 | <a name="input_talos_schematic_update"></a> [talos\_schematic\_update](#input\_talos\_schematic\_update) | Optional: A set of Talos extensions for updated nodes. Falls back to talos\_schematic if not specified. | `set(string)` | `null` | no |
 | <a name="input_talosconfig_file_name"></a> [talosconfig\_file\_name](#input\_talosconfig\_file\_name) | The path and filename for the generated Talos configuration file. Defaults to ~/.talos/config. | `string` | `"~/.talos/config"` | no |
 | <a name="input_vm_subnet"></a> [vm\_subnet](#input\_vm\_subnet) | The subnet for the virtual machines in the cluster. | `string` | n/a | yes |
-| <a name="input_workers"></a> [workers](#input\_workers) | Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details. | <pre>map(map(object({<br/>    count                = number<br/>    datastore            = optional(string, null)<br/>    node_group           = optional(string)<br/>    talos_version        = optional(string)<br/>    talos_version_update = optional(string)<br/>    kubernetes_version   = optional(string)<br/>    socket               = optional(number, 1)<br/>    cpu                  = optional(number, 4)<br/>    ram                  = optional(number, 8192)<br/>    balloon_enabled      = optional(bool, false)<br/>    min_memory           = optional(number, null)<br/>    sysctls              = optional(map(string), {})<br/>    extra_kernel_args    = optional(list(string), [])<br/>    networks = list(object({<br/>      bridge        = string<br/>      tag           = optional(number, null)<br/>      interface     = string<br/>      model         = optional(string, "virtio")<br/>      address       = optional(string, null)<br/>      dhcp_disabled = optional(bool, false)<br/>    }))<br/>    pci_passthrough = optional(list(object({<br/>      id      = optional(string)<br/>      mapping = optional(string)<br/>      pcie    = optional(bool, true)<br/>      rombar  = optional(bool, true)<br/>      xvga    = optional(bool, false)<br/>    })))<br/>    startup = optional(object({<br/>      order      = number<br/>      down_delay = number<br/>      up_delay   = number<br/>    }), null)<br/>  })))</pre> | `{}` | no |
+| <a name="input_workers"></a> [workers](#input\_workers) | Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details. | <pre>map(map(object({<br/>    count                  = number<br/>    datastore              = optional(string, null)<br/>    node_group             = optional(string)<br/>    talos_version          = optional(string)<br/>    talos_version_update   = optional(string)<br/>    talos_schematic        = optional(set(string), null)<br/>    talos_schematic_update = optional(set(string), null)<br/>    kubernetes_version     = optional(string)<br/>    socket                 = optional(number, 1)<br/>    cpu                    = optional(number, 4)<br/>    ram                    = optional(number, 8192)<br/>    balloon_enabled        = optional(bool, false)<br/>    min_memory             = optional(number, null)<br/>    sysctls                = optional(map(string), {})<br/>    extra_kernel_args      = optional(list(string), [])<br/>    networks = list(object({<br/>      bridge        = string<br/>      tag           = optional(number, null)<br/>      interface     = string<br/>      model         = optional(string, "virtio")<br/>      address       = optional(string, null)<br/>      dhcp_disabled = optional(bool, false)<br/>    }))<br/>    pci_passthrough = optional(list(object({<br/>      id      = optional(string)<br/>      mapping = optional(string)<br/>      pcie    = optional(bool, true)<br/>      rombar  = optional(bool, true)<br/>      xvga    = optional(bool, false)<br/>    })))<br/>    startup = optional(object({<br/>      order      = number<br/>      down_delay = number<br/>      up_delay   = number<br/>    }), null)<br/>  })))</pre> | `{}` | no |
 
 ## Outputs
 

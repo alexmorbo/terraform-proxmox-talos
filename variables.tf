@@ -108,19 +108,21 @@ variable "controlplanes" {
 
 variable "workers" {
   type = map(map(object({
-    count                = number
-    datastore            = optional(string, null)
-    node_group           = optional(string)
-    talos_version        = optional(string)
-    talos_version_update = optional(string)
-    kubernetes_version   = optional(string)
-    socket               = optional(number, 1)
-    cpu                  = optional(number, 4)
-    ram                  = optional(number, 8192)
-    balloon_enabled      = optional(bool, false)
-    min_memory           = optional(number, null)
-    sysctls              = optional(map(string), {})
-    extra_kernel_args    = optional(list(string), [])
+    count                  = number
+    datastore              = optional(string, null)
+    node_group             = optional(string)
+    talos_version          = optional(string)
+    talos_version_update   = optional(string)
+    talos_schematic        = optional(set(string), null)
+    talos_schematic_update = optional(set(string), null)
+    kubernetes_version     = optional(string)
+    socket                 = optional(number, 1)
+    cpu                    = optional(number, 4)
+    ram                    = optional(number, 8192)
+    balloon_enabled        = optional(bool, false)
+    min_memory             = optional(number, null)
+    sysctls                = optional(map(string), {})
+    extra_kernel_args      = optional(list(string), [])
     networks = list(object({
       bridge        = string
       tag           = optional(number, null)
