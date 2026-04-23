@@ -243,15 +243,17 @@ locals {
             key = "${var.cluster_name}-cp-${substr(sha256("${node_key}${i}${local.talos_version_update}${local.schematic_fingerprint_update}"), 0, 7)}"
 
             value = {
-              type               = "controlplane"
-              sockets            = cp_config.socket
-              cpus               = cp_config.cpu
-              memory             = cp_config.ram
-              balloon_enabled    = cp_config.balloon_enabled
-              min_memory         = cp_config.min_memory
-              sysctls            = cp_config.sysctls
-              networks           = cp_config.networks
-              image              = local.talos_image_ids["${node_key}_${local.talos_version_update}_${local.schematic_fingerprint_update}"]
+              type            = "controlplane"
+              sockets         = cp_config.socket
+              cpus            = cp_config.cpu
+              memory          = cp_config.ram
+              balloon_enabled = cp_config.balloon_enabled
+              min_memory      = cp_config.min_memory
+              sysctls         = cp_config.sysctls
+              networks        = cp_config.networks
+              # Update CP VMs: resource ref for ordering (see worker
+              # update block for rationale).
+              image              = proxmox_virtual_environment_download_file.talos_image["${node_key}_${local.talos_version_update}_${local.schematic_fingerprint_update}"].id
               target_node        = node_key
               datastore          = local.datastores_per_node[node_key]
               startup            = cp_config.startup
@@ -300,19 +302,23 @@ locals {
               key = "${var.cluster_name}-wk-${node_group}-${substr(sha256("${node_group}${node_key}${i}${worker_config.talos_version_update}${worker_config.schematic_fingerprint_update}"), 0, 7)}"
 
               value = {
-                type               = "worker"
-                from               = "update"
-                sockets            = worker_config.socket
-                cpus               = worker_config.cpu
-                memory             = worker_config.ram
-                balloon_enabled    = worker_config.balloon_enabled
-                min_memory         = worker_config.min_memory
-                sysctls            = worker_config.sysctls
-                extra_kernel_args  = worker_config.extra_kernel_args
-                networks           = worker_config.networks
-                pci_passthrough    = worker_config.pci_passthrough
-                startup            = worker_config.startup
-                image              = local.talos_image_ids["${node_key}_${worker_config.talos_version_update}_${worker_config.schematic_fingerprint_update}"]
+                type              = "worker"
+                from              = "update"
+                sockets           = worker_config.socket
+                cpus              = worker_config.cpu
+                memory            = worker_config.ram
+                balloon_enabled   = worker_config.balloon_enabled
+                min_memory        = worker_config.min_memory
+                sysctls           = worker_config.sysctls
+                extra_kernel_args = worker_config.extra_kernel_args
+                networks          = worker_config.networks
+                pci_passthrough   = worker_config.pci_passthrough
+                startup           = worker_config.startup
+                # Update VMs use the live resource ref so creation waits
+                # for the download to finish. Existing ("init") VMs use
+                # the precomputed string to avoid the unknown-cascade
+                # that would otherwise invalidate unrelated nodes.
+                image              = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version_update}_${worker_config.schematic_fingerprint_update}"].id
                 node_group         = coalesce(worker_config.node_group, node_group)
                 target_node        = node_key
                 datastore          = coalesce(worker_config.datastore, local.datastores_per_node[node_key])
