@@ -39,6 +39,23 @@ output "dedicated_node_groups" {
   description = "Set of dedicated node groups in the cluster, that have taints."
 }
 
+output "node_macs_by_group" {
+  value = merge(
+    {
+      controlplane = flatten([
+        for node_name, node in module.control_plane.nodes : node.vm.mac_addresses
+      ])
+    },
+    {
+      for g_name, g in module.worker_node_group : g_name => flatten([
+        for node_name, node in g.nodes : node.vm.mac_addresses
+      ])
+    },
+  )
+
+  description = "Map of node group name to list of MAC addresses of its nodes (all network interfaces). Useful for source filters in network policies (e.g. UniFi traffic routes)."
+}
+
 output "cilium_values" {
   value = var.cilium_values
 

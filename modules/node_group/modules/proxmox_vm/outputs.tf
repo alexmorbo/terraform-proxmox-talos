@@ -18,6 +18,7 @@ output "node" {
   value = {
     name           = proxmox_virtual_environment_vm.vm.name
     ipv4_addresses = proxmox_virtual_environment_vm.vm.ipv4_addresses
+    mac_addresses  = [for nd in proxmox_virtual_environment_vm.vm.network_device : nd.mac_address]
   }
 }
 
