@@ -21,6 +21,7 @@ locals {
     client_configuration = data.talos_client_configuration.this.client_configuration
     cilium_values        = var.cilium_values
     config_template_path = "${path.module}/talos/pve_vm_machineconfig.yaml.tftpl"
+    node_label_domain    = var.node_label_domain
     cilium_template_path = "${path.module}/talos/cilium-install.yaml.tftpl"
     talos_version        = "v${join(".", slice(split(".", var.talos_cp_version), 0, 2))}"
     static_routes        = var.static_routes
@@ -55,6 +56,7 @@ module "controlplane_talos_config" {
   client_configuration = local.talos_config_common.client_configuration
   cilium_values        = local.talos_config_common.cilium_values
   config_template_path = local.talos_config_common.config_template_path
+  node_label_domain    = local.talos_config_common.node_label_domain
   cilium_template_path = local.talos_config_common.cilium_template_path
   talos_version        = local.talos_config_common.talos_version
   static_routes        = local.talos_config_common.static_routes
@@ -88,6 +90,7 @@ module "worker_talos_config" {
   client_configuration = local.talos_config_common.client_configuration
   cilium_values        = local.talos_config_common.cilium_values
   config_template_path = local.talos_config_common.config_template_path
+  node_label_domain    = local.talos_config_common.node_label_domain
   cilium_template_path = local.talos_config_common.cilium_template_path
   talos_version        = local.talos_config_common.talos_version
   static_routes        = local.talos_config_common.static_routes
@@ -103,6 +106,7 @@ data "talos_machine_configuration" "external" {
   talos_version    = local.talos_config_common.talos_version
   config_patches = [
     templatefile("${path.module}/talos/external_machineconfig.yaml.tftpl", {
+      node_label_domain  = var.node_label_domain
       hostname           = each.key
       type               = each.value.type
       kubernetes_version = local.node_kubernetes_versions[each.key]

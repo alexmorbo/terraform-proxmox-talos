@@ -32,6 +32,7 @@ variable "client_configuration" {
 }
 variable "cilium_values" { type = any }
 variable "config_template_path" { type = string }
+variable "node_label_domain" { type = string }
 variable "cilium_template_path" { type = string }
 variable "talos_version" {
   type    = string

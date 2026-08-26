@@ -18,6 +18,7 @@ data "talos_machine_configuration" "this" {
       dns                = var.dns
       proxmox_node       = each.value.target_node
       proxmox_cluster    = var.proxmox_cluster_name
+      node_label_domain  = var.node_label_domain
       node_group         = try(each.value.node_group, null)
       sysctls            = merge(var.sysctls, each.value.sysctls)
       extra_kernel_args  = try(each.value.extra_kernel_args, [])

@@ -18,7 +18,7 @@ machine:
     extraArgs:
       cloud-provider: external # required for Proxmox CCM
       %{~ if node_group != null && node_group != "default" ~}
-      register-with-taints: "node.home.lab/dedicated=${node_group}:NoExecute"
+      register-with-taints: "${node_label_domain}/dedicated=${node_group}:NoExecute"
       %{~ endif ~}
     clusterDNS:
       - "${cidrhost(service_subnet, 10)}"
@@ -64,7 +64,7 @@ machine:
     topology.kubernetes.io/region: ${proxmox_cluster}
     topology.kubernetes.io/zone: ${proxmox_node}
     %{ if node_group != null }
-    node.home.lab/group: ${node_group}
+    ${node_label_domain}/group: ${node_group}
     %{ endif }
   systemDiskEncryption:
     state:

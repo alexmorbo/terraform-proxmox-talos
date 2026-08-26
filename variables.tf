@@ -324,3 +324,10 @@ variable "static_routes" {
 
   default = []
 }
+
+variable "node_label_domain" {
+  type        = string
+  description = "Domain prefix for node labels and taints: <domain>/group and <domain>/dedicated. Defaults to the historical value so existing clusters are unaffected."
+
+  default = "node.home.lab"
+}
