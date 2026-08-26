@@ -220,7 +220,7 @@ locals {
             value = {
               type               = "controlplane"
               sockets            = cp_config.socket
-              cpus               = cp_config.cpu
+              cores              = cp_config.cpu
               memory             = cp_config.ram
               balloon_enabled    = cp_config.balloon_enabled
               min_memory         = cp_config.min_memory
@@ -245,7 +245,7 @@ locals {
             value = {
               type            = "controlplane"
               sockets         = cp_config.socket
-              cpus            = cp_config.cpu
+              cores           = cp_config.cpu
               memory          = cp_config.ram
               balloon_enabled = cp_config.balloon_enabled
               min_memory      = cp_config.min_memory
@@ -274,7 +274,7 @@ locals {
                 type               = "worker"
                 from               = "init"
                 sockets            = worker_config.socket
-                cpus               = worker_config.cpu
+                cores              = worker_config.cpu
                 memory             = worker_config.ram
                 balloon_enabled    = worker_config.balloon_enabled
                 min_memory         = worker_config.min_memory
@@ -305,7 +305,7 @@ locals {
                 type              = "worker"
                 from              = "update"
                 sockets           = worker_config.socket
-                cpus              = worker_config.cpu
+                cores             = worker_config.cpu
                 memory            = worker_config.ram
                 balloon_enabled   = worker_config.balloon_enabled
                 min_memory        = worker_config.min_memory
