@@ -331,3 +331,29 @@ variable "node_label_domain" {
 
   default = "node.home.lab"
 }
+
+variable "api_server_extra_args" {
+  type    = map(string)
+  default = {}
+}
+
+variable "controller_manager_extra_args" {
+  type = map(string)
+
+  # Talos биндит kube-controller-manager на 127.0.0.1, чтобы сузить поверхность
+  # атаки. Для сбора метрик нужен bind-address: 0.0.0.0.
+  default = {}
+}
+
+variable "scheduler_extra_args" {
+  type    = map(string)
+  default = {}
+}
+
+variable "etcd_extra_args" {
+  type = map(string)
+
+  # listen-metrics-urls: http://0.0.0.0:2381 открывает метрики etcd, причём
+  # без аутентификации — порт доступен всем в подсети кластера.
+  default = {}
+}

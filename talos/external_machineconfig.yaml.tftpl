@@ -80,10 +80,28 @@ cluster:
       requests:
         cpu: "500m"
         memory: "1Gi"
+%{ if length(api_server_extra_args) > 0 ~}
+    extraArgs:
+%{ for k, v in api_server_extra_args ~}
+      ${k}: "${v}"
+%{ endfor ~}
+%{ endif ~}
   controllerManager:
     image: "registry.k8s.io/kube-controller-manager:v${kubernetes_version}"
+%{ if length(controller_manager_extra_args) > 0 ~}
+    extraArgs:
+%{ for k, v in controller_manager_extra_args ~}
+      ${k}: "${v}"
+%{ endfor ~}
+%{ endif ~}
   scheduler:
     image: "registry.k8s.io/kube-scheduler:v${kubernetes_version}"
+%{ if length(scheduler_extra_args) > 0 ~}
+    extraArgs:
+%{ for k, v in scheduler_extra_args ~}
+      ${k}: "${v}"
+%{ endfor ~}
+%{ endif ~}
   externalCloudProvider:
     enabled: false
   inlineManifests:

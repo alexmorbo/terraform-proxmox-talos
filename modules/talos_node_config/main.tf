@@ -25,6 +25,11 @@ data "talos_machine_configuration" "this" {
       machine_features   = var.machine_features
       balloon_enabled    = try(each.value.balloon_enabled, false)
       static_routes      = var.static_routes
+
+      api_server_extra_args         = var.api_server_extra_args
+      controller_manager_extra_args = var.controller_manager_extra_args
+      scheduler_extra_args          = var.scheduler_extra_args
+      etcd_extra_args               = var.etcd_extra_args
       inline_manifests = [
         {
           name = "cilium-install"

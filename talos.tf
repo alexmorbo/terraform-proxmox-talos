@@ -25,6 +25,11 @@ locals {
     cilium_template_path = "${path.module}/talos/cilium-install.yaml.tftpl"
     talos_version        = "v${join(".", slice(split(".", var.talos_cp_version), 0, 2))}"
     static_routes        = var.static_routes
+
+    api_server_extra_args         = var.api_server_extra_args
+    controller_manager_extra_args = var.controller_manager_extra_args
+    scheduler_extra_args          = var.scheduler_extra_args
+    etcd_extra_args               = var.etcd_extra_args
   }
 }
 
@@ -58,8 +63,13 @@ module "controlplane_talos_config" {
   config_template_path = local.talos_config_common.config_template_path
   node_label_domain    = local.talos_config_common.node_label_domain
   cilium_template_path = local.talos_config_common.cilium_template_path
-  talos_version        = local.talos_config_common.talos_version
-  static_routes        = local.talos_config_common.static_routes
+
+  api_server_extra_args         = local.talos_config_common.api_server_extra_args
+  controller_manager_extra_args = local.talos_config_common.controller_manager_extra_args
+  scheduler_extra_args          = local.talos_config_common.scheduler_extra_args
+  etcd_extra_args               = local.talos_config_common.etcd_extra_args
+  talos_version                 = local.talos_config_common.talos_version
+  static_routes                 = local.talos_config_common.static_routes
 }
 
 module "worker_talos_config" {
@@ -92,8 +102,13 @@ module "worker_talos_config" {
   config_template_path = local.talos_config_common.config_template_path
   node_label_domain    = local.talos_config_common.node_label_domain
   cilium_template_path = local.talos_config_common.cilium_template_path
-  talos_version        = local.talos_config_common.talos_version
-  static_routes        = local.talos_config_common.static_routes
+
+  api_server_extra_args         = local.talos_config_common.api_server_extra_args
+  controller_manager_extra_args = local.talos_config_common.controller_manager_extra_args
+  scheduler_extra_args          = local.talos_config_common.scheduler_extra_args
+  etcd_extra_args               = local.talos_config_common.etcd_extra_args
+  talos_version                 = local.talos_config_common.talos_version
+  static_routes                 = local.talos_config_common.static_routes
 }
 
 data "talos_machine_configuration" "external" {
@@ -122,6 +137,10 @@ data "talos_machine_configuration" "external" {
       has_nvidia         = anytrue([for cap in each.value.capabilities : can(regex("nvidia", cap))])
       install_disk       = each.value.install_disk
       install_wipe       = each.value.install_wipe
+
+      api_server_extra_args         = var.api_server_extra_args
+      controller_manager_extra_args = var.controller_manager_extra_args
+      scheduler_extra_args          = var.scheduler_extra_args
       inline_manifests = [
         {
           name = "cilium-install"

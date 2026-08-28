@@ -46,3 +46,23 @@ variable "static_routes" {
   }))
   default = []
 }
+
+variable "api_server_extra_args" {
+  type    = map(string)
+  default = {}
+}
+
+variable "controller_manager_extra_args" {
+  type    = map(string)
+  default = {}
+}
+
+variable "scheduler_extra_args" {
+  type    = map(string)
+  default = {}
+}
+
+variable "etcd_extra_args" {
+  type    = map(string)
+  default = {}
+}
