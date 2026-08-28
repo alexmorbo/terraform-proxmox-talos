@@ -4,6 +4,11 @@ machine:
     wipe: ${install_wipe}
     extraKernelArgs:
       - net.ifnames=0
+    # С контракта новее 1.11 генератор ставит grubUseUKICmdline: true, а
+    # валидация Talos запрещает его вместе с extraKernelArgs —
+    # v1alpha1_validation.go: "install.extraKernelArgs and
+    # install.grubUseUKICmdline can't be used together".
+    grubUseUKICmdline: false
   kubelet:
     image: "ghcr.io/siderolabs/kubelet:v${kubernetes_version}"
     %{~ if enable_taints && node_group != null && node_group != "default" ~}

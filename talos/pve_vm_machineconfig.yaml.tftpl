@@ -12,6 +12,7 @@ machine:
 %{ for arg in extra_kernel_args ~}
       - ${arg}
 %{ endfor ~}
+    grubUseUKICmdline: false
 %{ endif }
   kubelet:
     image: "ghcr.io/siderolabs/kubelet:v${kubernetes_version}"

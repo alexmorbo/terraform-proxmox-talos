@@ -48,21 +48,29 @@ variable "static_routes" {
 }
 
 variable "api_server_extra_args" {
-  type    = map(string)
+  description = "Flags appended to cluster.apiServer.extraArgs."
+  type        = map(string)
+
   default = {}
 }
 
 variable "controller_manager_extra_args" {
-  type    = map(string)
+  description = "Flags appended to cluster.controllerManager.extraArgs."
+  type        = map(string)
+
   default = {}
 }
 
 variable "scheduler_extra_args" {
-  type    = map(string)
+  description = "Flags appended to cluster.scheduler.extraArgs."
+  type        = map(string)
+
   default = {}
 }
 
 variable "etcd_extra_args" {
-  type    = map(string)
+  description = "Flags appended to cluster.etcd.extraArgs, control plane only."
+  type        = map(string)
+
   default = {}
 }

@@ -333,27 +333,29 @@ variable "node_label_domain" {
 }
 
 variable "api_server_extra_args" {
-  type    = map(string)
+  description = "Flags appended to cluster.apiServer.extraArgs. Talos denies a number of flags for this component, among them tls-cert-file and the *-kubeconfig family."
+  type        = map(string)
+
   default = {}
 }
 
 variable "controller_manager_extra_args" {
-  type = map(string)
+  description = "Flags appended to cluster.controllerManager.extraArgs. Talos binds the component to 127.0.0.1 to keep its metrics off the network; `bind-address = \"0.0.0.0\"` exposes them on :10257 over HTTPS, where /metrics still requires a bearer token."
+  type        = map(string)
 
-  # Talos биндит kube-controller-manager на 127.0.0.1, чтобы сузить поверхность
-  # атаки. Для сбора метрик нужен bind-address: 0.0.0.0.
   default = {}
 }
 
 variable "scheduler_extra_args" {
-  type    = map(string)
+  description = "Flags appended to cluster.scheduler.extraArgs. Same story as the controller manager, on :10259."
+  type        = map(string)
+
   default = {}
 }
 
 variable "etcd_extra_args" {
-  type = map(string)
+  description = "Flags appended to cluster.etcd.extraArgs, control plane only. `listen-metrics-urls = \"http://0.0.0.0:2381\"` exposes etcd metrics — over plain HTTP with no authentication, reachable from anywhere that can route to the node."
+  type        = map(string)
 
-  # listen-metrics-urls: http://0.0.0.0:2381 открывает метрики etcd, причём
-  # без аутентификации — порт доступен всем в подсети кластера.
   default = {}
 }
