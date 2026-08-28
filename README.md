@@ -294,6 +294,7 @@ workers = {
 | <a name="output_kubeconfig"></a> [kubeconfig](#output\_kubeconfig) | The kubeconfig for accessing the Kubernetes cluster, containing the necessary authentication information and cluster context. |
 | <a name="output_kubernetes_version"></a> [kubernetes\_version](#output\_kubernetes\_version) | n/a |
 | <a name="output_node_ips"></a> [node\_ips](#output\_node\_ips) | A map of node names to their respective IP addresses, showing the internal IPs of each node in the cluster. |
+| <a name="output_node_ips_by_group"></a> [node\_ips\_by\_group](#output\_node\_ips\_by\_group) | Map of node group name to the IPs of its nodes. Control plane entries are what a metrics scrape needs as endpoints, since components like the scheduler and etcd are reachable only on the node address. |
 | <a name="output_node_macs_by_group"></a> [node\_macs\_by\_group](#output\_node\_macs\_by\_group) | Map of node group name to list of MAC addresses of its nodes (all network interfaces). Useful for source filters in network policies (e.g. UniFi traffic routes). |
 | <a name="output_talos_config"></a> [talos\_config](#output\_talos\_config) | The Talos configuration used for the cluster nodes, containing sensitive data such as credentials and settings for node provisioning. |
 | <a name="output_talos_version"></a> [talos\_version](#output\_talos\_version) | n/a |

@@ -39,6 +39,23 @@ output "dedicated_node_groups" {
   description = "Set of dedicated node groups in the cluster, that have taints."
 }
 
+output "node_ips_by_group" {
+  value = merge(
+    {
+      controlplane = flatten([
+        for node_name, node in module.control_plane.nodes : local.node_ips[node.vm.name]
+      ])
+    },
+    {
+      for g_name, g in module.worker_node_group : g_name => flatten([
+        for node_name, node in g.nodes : local.node_ips[node.vm.name]
+      ])
+    },
+  )
+
+  description = "Map of node group name to the IPs of its nodes. Control plane entries are what a metrics scrape needs as endpoints, since components like the scheduler and etcd are reachable only on the node address."
+}
+
 output "node_macs_by_group" {
   value = merge(
     {
