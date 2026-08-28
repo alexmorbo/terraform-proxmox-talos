@@ -4,9 +4,9 @@ machine:
     wipe: ${install_wipe}
     extraKernelArgs:
       - net.ifnames=0
-    # С контракта новее 1.11 генератор ставит grubUseUKICmdline: true, а
-    # валидация Talos запрещает его вместе с extraKernelArgs —
-    # v1alpha1_validation.go: "install.extraKernelArgs and
+    # For contracts newer than 1.11 the generator sets
+    # grubUseUKICmdline: true, and Talos validation rejects it alongside
+    # extraKernelArgs: "install.extraKernelArgs and
     # install.grubUseUKICmdline can't be used together".
     grubUseUKICmdline: false
   kubelet:

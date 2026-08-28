@@ -13,10 +13,10 @@ resource "proxmox_download_file" "talos_image" {
   verify                  = false
 }
 
-# Провайдер укорачивает имена ресурсов, убирая префикс virtual_environment;
-# у короткого имени реализован MoveState, поэтому переезд идёт блоком moved,
-# без пересоздания — иначе образ Talos удалился бы из хранилища и скачался
-# заново. Требует Terraform >= 1.8.
+# The provider is shortening resource names by dropping the
+# virtual_environment prefix. The short name implements MoveState, so this is
+# a moved block rather than a replacement — recreating it would delete the
+# Talos image from the datastore and download it again. Needs Terraform 1.8.
 moved {
   from = proxmox_virtual_environment_download_file.talos_image
   to   = proxmox_download_file.talos_image

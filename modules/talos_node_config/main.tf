@@ -1,7 +1,7 @@
 locals {
-  # STATE и EPHEMERAL шифруются ключом, привязанным к ноде. Раньше это
-  # задавалось через machine.systemDiskEncryption — в Talos 1.13 поле
-  # помечено deprecated в пользу отдельных документов VolumeConfig.
+  # STATE and EPHEMERAL are encrypted with a node-bound key. This used to
+  # live in machine.systemDiskEncryption, deprecated in Talos 1.13 in favour
+  # of separate VolumeConfig documents.
   disk_encryption = {
     provider = "luks2"
     options  = ["no_read_workqueue", "no_write_workqueue"]
