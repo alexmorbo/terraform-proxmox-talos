@@ -207,9 +207,9 @@ workers = {
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.8.0 |
 | <a name="requirement_local"></a> [local](#requirement\_local) | >= 2.5.2 |
-| <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | >= 0.76.1 |
+| <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | >= 0.111.0, < 1.0.0 |
 | <a name="requirement_talos"></a> [talos](#requirement\_talos) | >= 0.10.0, < 0.11.0 |
 
 ## Providers
@@ -235,7 +235,7 @@ workers = {
 |------|------|
 | [local_file.kubeconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [local_file.talosconfig](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
-| [proxmox_virtual_environment_download_file.talos_image](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_download_file) | resource |
+| [proxmox_download_file.talos_image](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/download_file) | resource |
 | [talos_cluster_kubeconfig.this](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/cluster_kubeconfig) | resource |
 | [talos_image_factory_schematic.this](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/image_factory_schematic) | resource |
 | [talos_machine_bootstrap.this](https://registry.terraform.io/providers/siderolabs/talos/latest/docs/resources/machine_bootstrap) | resource |

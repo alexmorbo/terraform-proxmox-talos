@@ -4,7 +4,7 @@
 # invalidates downstream data sources for unrelated nodes.
 #
 # Trade-off: there is no graph dependency VM → download_file. In
-# practice, `proxmox_virtual_environment_download_file` still depends
+# practice, `proxmox_download_file` still depends
 # on `talos_image_factory_schematic.this` (via url), so the
 # create-order is schematic → download → (parallel) VM. On incremental
 # changes to existing clusters (all prior images already present) this

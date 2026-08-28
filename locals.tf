@@ -253,7 +253,7 @@ locals {
               networks        = cp_config.networks
               # Update CP VMs: resource ref for ordering (see worker
               # update block for rationale).
-              image              = proxmox_virtual_environment_download_file.talos_image["${node_key}_${local.talos_version_update}_${local.schematic_fingerprint_update}"].id
+              image              = proxmox_download_file.talos_image["${node_key}_${local.talos_version_update}_${local.schematic_fingerprint_update}"].id
               target_node        = node_key
               datastore          = local.datastores_per_node[node_key]
               startup            = cp_config.startup
@@ -318,7 +318,7 @@ locals {
                 # for the download to finish. Existing ("init") VMs use
                 # the precomputed string to avoid the unknown-cascade
                 # that would otherwise invalidate unrelated nodes.
-                image              = proxmox_virtual_environment_download_file.talos_image["${node_key}_${worker_config.talos_version_update}_${worker_config.schematic_fingerprint_update}"].id
+                image              = proxmox_download_file.talos_image["${node_key}_${worker_config.talos_version_update}_${worker_config.schematic_fingerprint_update}"].id
                 node_group         = coalesce(worker_config.node_group, node_group)
                 target_node        = node_key
                 datastore          = coalesce(worker_config.datastore, local.datastores_per_node[node_key])

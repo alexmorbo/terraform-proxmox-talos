@@ -11,7 +11,7 @@ repos:
       name: Autoupdate proxmox versions
       args:
         - --args=provider proxmox
-        - --args=--version ">= 0.76.1"
+        - --args=--version ">= 0.111.0, < 1.0.0"
         - --args=--recursive
     - id: tfupdate
       name: Autoupdate talos versions
@@ -29,7 +29,7 @@ repos:
       name: Autoupdate terraform versions
       args:
         - --args=terraform
-        - --args=--version ">= 1.5.0"
+        - --args=--version ">= 1.8.0"
         - --args=--recursive
     - id: terraform_docs
 - repo: https://github.com/pre-commit/pre-commit-hooks

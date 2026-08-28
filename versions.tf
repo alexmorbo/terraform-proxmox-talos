@@ -1,8 +1,12 @@
 terraform {
   required_providers {
     proxmox = {
-      source  = "bpg/proxmox"
-      version = ">= 0.76.1"
+      source = "bpg/proxmox"
+
+      # Верхняя граница по v1.0: там убирают длинные имена ресурсов
+      # (proxmox_virtual_environment_*) — см. ADR-007 провайдера. До тех пор
+      # оба имени работают, и переезд делается блоком moved.
+      version = ">= 0.111.0, < 1.0.0"
     }
     talos = {
       source = "siderolabs/talos"
@@ -20,5 +24,6 @@ terraform {
     }
   }
 
-  required_version = ">= 1.5.0"
+  # moved между типами ресурсов требует 1.8.
+  required_version = ">= 1.8.0"
 }
