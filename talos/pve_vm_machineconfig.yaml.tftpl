@@ -67,19 +67,6 @@ machine:
     %{ if node_group != null }
     ${node_label_domain}/group: ${node_group}
     %{ endif }
-  systemDiskEncryption:
-    state:
-      provider: luks2
-      options: ["no_read_workqueue", "no_write_workqueue"]
-      keys:
-        - nodeID: {}
-          slot: 0
-    ephemeral:
-      provider: luks2
-      options: ["no_read_workqueue", "no_write_workqueue"]
-      keys:
-        - nodeID: {}
-          slot: 0
 %{ if type == "controlplane" || length(machine_features) > 0 }
   features:
 %{ if type == "controlplane" }

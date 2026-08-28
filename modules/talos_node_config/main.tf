@@ -1,3 +1,19 @@
+locals {
+  # STATE и EPHEMERAL шифруются ключом, привязанным к ноде. Раньше это
+  # задавалось через machine.systemDiskEncryption — в Talos 1.13 поле
+  # помечено deprecated в пользу отдельных документов VolumeConfig.
+  disk_encryption = {
+    provider = "luks2"
+    options  = ["no_read_workqueue", "no_write_workqueue"]
+    keys = [
+      {
+        slot   = 0
+        nodeID = {}
+      }
+    ]
+  }
+}
+
 data "talos_machine_configuration" "this" {
   for_each = var.nodes
 
@@ -44,6 +60,18 @@ data "talos_machine_configuration" "this" {
       kind       = "HostnameConfig"
       hostname   = each.key
       auto       = "off"
+    }),
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "VolumeConfig"
+      name       = "STATE"
+      encryption = local.disk_encryption
+    }),
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "VolumeConfig"
+      name       = "EPHEMERAL"
+      encryption = local.disk_encryption
     }),
   ]
 

@@ -7,6 +7,17 @@ data "talos_client_configuration" "this" {
 }
 
 locals {
+  disk_encryption = {
+    provider = "luks2"
+    options  = ["no_read_workqueue", "no_write_workqueue"]
+    keys = [
+      {
+        slot   = 0
+        nodeID = {}
+      }
+    ]
+  }
+
   talos_config_common = {
     cluster_name         = var.cluster_name
     cluster_vip          = var.cluster_vip
@@ -155,6 +166,18 @@ data "talos_machine_configuration" "external" {
       kind       = "HostnameConfig"
       hostname   = each.key
       auto       = "off"
+    }),
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "VolumeConfig"
+      name       = "STATE"
+      encryption = local.disk_encryption
+    }),
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "VolumeConfig"
+      name       = "EPHEMERAL"
+      encryption = local.disk_encryption
     }),
   ]
 }
