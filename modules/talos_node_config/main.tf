@@ -42,6 +42,12 @@ data "talos_machine_configuration" "this" {
       balloon_enabled    = try(each.value.balloon_enabled, false)
       static_routes      = var.static_routes
 
+      allow_scheduling_on_control_planes = var.allow_scheduling_on_control_planes
+      kubelet_extra_config = merge(
+        var.kubelet_extra_config,
+        try(yamldecode(each.value.kubelet_extra_config), {}),
+      )
+
       api_server_extra_args         = var.api_server_extra_args
       controller_manager_extra_args = var.controller_manager_extra_args
       scheduler_extra_args          = var.scheduler_extra_args
@@ -84,6 +90,7 @@ resource "talos_machine_configuration_apply" "this" {
   client_configuration        = var.client_configuration
   machine_configuration_input = data.talos_machine_configuration.this[each.key].machine_configuration
   node                        = var.node_ips[each.key][0]
+  apply_mode                  = var.apply_mode
 
   on_destroy = {
     graceful = true

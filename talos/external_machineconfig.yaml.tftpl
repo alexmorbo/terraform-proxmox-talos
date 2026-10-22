@@ -19,6 +19,10 @@ machine:
       - "${cidrhost(service_subnet, 10)}"
     nodeIP:
       validSubnets: [%{ for i, net in networks }%{ if net.subnet != null }"${net.subnet}"%{ if i < length(networks) - 1 }, %{ endif }%{ endif }%{ endfor }]
+%{ if length(kubelet_extra_config) > 0 ~}
+    extraConfig:
+      ${indent(6, chomp(yamlencode(kubelet_extra_config)))}
+%{ endif ~}
   %{ if has_nvidia || length(sysctls) > 0 }
   sysctls:
   %{ if has_nvidia }
@@ -71,7 +75,7 @@ machine:
       enabled: false
 
 cluster:
-  allowSchedulingOnControlPlanes: true
+  allowSchedulingOnControlPlanes: ${allow_scheduling_on_control_planes}
   network:
     cni:
       name: none

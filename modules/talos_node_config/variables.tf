@@ -74,3 +74,24 @@ variable "etcd_extra_args" {
 
   default = {}
 }
+
+variable "allow_scheduling_on_control_planes" {
+  description = "Rendered as cluster.allowSchedulingOnControlPlanes."
+  type        = bool
+
+  default = false
+}
+
+variable "kubelet_extra_config" {
+  description = "Global machine.kubelet.extraConfig; a node's own kubelet_extra_config (YAML string) is shallow-merged over it."
+  type        = any
+
+  default = {}
+}
+
+variable "apply_mode" {
+  description = "apply_mode of talos_machine_configuration_apply."
+  type        = string
+
+  default = "auto"
+}

@@ -25,6 +25,10 @@ machine:
       - "${cidrhost(service_subnet, 10)}"
     nodeIP:
       validSubnets: ["${vm_subnet}"]
+%{ if length(kubelet_extra_config) > 0 ~}
+    extraConfig:
+      ${indent(6, chomp(yamlencode(kubelet_extra_config)))}
+%{ endif ~}
   %{ if length(sysctls) > 0 }
   sysctls:
   %{ for syskey, sysvalue in sysctls }
@@ -86,7 +90,7 @@ ${replace(yamlencode(machine_features), "/(?m)^/", "    ")}
 %{ endif }
 
 cluster:
-  allowSchedulingOnControlPlanes: true
+  allowSchedulingOnControlPlanes: ${allow_scheduling_on_control_planes}
   network:
     cni:
       name: none

@@ -16,7 +16,7 @@ terraform {
       # it and config_patches: #327, #334, #352/#359, #388/#389. The last fix
       # (b827ab3a, 2026-08-27) is in no release: 0.11.0 is the only stable one
       # in that line and 0.12.0 exists as a beta.
-      version = ">= 0.10.0, < 0.11.0"
+      version = ">= 0.10.1, < 0.11.0"
     }
     local = {
       source  = "hashicorp/local"

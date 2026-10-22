@@ -96,14 +96,23 @@ variable "controlplanes" {
       address       = optional(string, null)
       dhcp_disabled = optional(bool, false)
     }))
-    kubernetes_version = optional(string)
+    kubernetes_version   = optional(string)
+    kubelet_extra_config = optional(string)
     startup = optional(object({
       order      = number
       down_delay = number
       up_delay   = number
     }), null)
   }))
-  description = "Configuration of control plane nodes, including the number of nodes, resources (CPU, RAM), and network configuration."
+  description = "Configuration of control plane nodes, including the number of nodes, resources (CPU, RAM), and network configuration. `kubelet_extra_config` is a YAML (or JSON) mapping shallow-merged over var.kubelet_extra_config for these nodes."
+
+  validation {
+    condition = alltrue([
+      for cp in values(var.controlplanes) : can(keys(yamldecode(cp.kubelet_extra_config)))
+      if try(trimspace(cp.kubelet_extra_config), "") != ""
+    ])
+    error_message = "controlplanes[*].kubelet_extra_config must be a YAML or JSON mapping (an empty string means unset). The offending group is not named here; check each group's value."
+  }
 }
 
 variable "workers" {
@@ -123,6 +132,7 @@ variable "workers" {
     min_memory             = optional(number, null)
     sysctls                = optional(map(string), {})
     extra_kernel_args      = optional(list(string), [])
+    kubelet_extra_config   = optional(string)
     networks = list(object({
       bridge        = string
       tag           = optional(number, null)
@@ -146,7 +156,17 @@ variable "workers" {
   })))
 
   default     = {}
-  description = "Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details."
+  description = "Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details. `kubelet_extra_config` is a YAML (or JSON) mapping shallow-merged over var.kubelet_extra_config for the group."
+
+  validation {
+    condition = alltrue(flatten([
+      for pve_node_workers in values(var.workers) : [
+        for w in values(pve_node_workers) : can(keys(yamldecode(w.kubelet_extra_config)))
+        if try(trimspace(w.kubelet_extra_config), "") != ""
+      ]
+    ]))
+    error_message = "workers[*][*].kubelet_extra_config must be a YAML or JSON mapping (an empty string means unset). The offending group is not named here; check each group's value."
+  }
 }
 
 variable "external_worker_nodes" {
@@ -358,4 +378,38 @@ variable "etcd_extra_args" {
   type        = map(string)
 
   default = {}
+}
+
+variable "allow_scheduling_on_control_planes" {
+  description = "Renders cluster.allowSchedulingOnControlPlanes. When false, Talos keeps the node-role.kubernetes.io/control-plane:NoSchedule taint on control plane nodes."
+  type        = bool
+
+  default  = false
+  nullable = false
+}
+
+variable "kubelet_extra_config" {
+  description = "KubeletConfiguration fields rendered into machine.kubelet.extraConfig on every node. A group-level kubelet_extra_config is shallow-merged over it: a key set on the group replaces the global key as a whole. Nothing is rendered when the result is empty."
+  type        = any
+
+  default  = {}
+  nullable = false
+
+  validation {
+    condition     = can(keys(var.kubelet_extra_config))
+    error_message = "kubelet_extra_config must be a map or an object."
+  }
+}
+
+variable "apply_mode" {
+  description = "apply_mode of talos_machine_configuration_apply for all nodes, on create as well as on update. `staged_if_needing_reboot` stages the config instead of rebooting when a reboot would be required. The provider's `reboot`, `no_reboot` and `staged` are not accepted: depending on the Talos version they fail on nodes booted in maintenance mode or on every update."
+  type        = string
+
+  default  = "auto"
+  nullable = false
+
+  validation {
+    condition     = contains(["auto", "staged_if_needing_reboot"], var.apply_mode)
+    error_message = "apply_mode must be one of: auto, staged_if_needing_reboot."
+  }
 }

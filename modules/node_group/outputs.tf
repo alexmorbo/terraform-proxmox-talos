@@ -10,6 +10,8 @@ output "nodes" {
       extra_kernel_args  = { for n in var.nodes : n.name => n.extra_kernel_args }[node_name]
       kubernetes_version = node.kubernetes_version
       balloon_enabled    = node.balloon_enabled
+
+      kubelet_extra_config = { for n in var.nodes : n.name => n.kubelet_extra_config }[node_name]
     }
   }
 }

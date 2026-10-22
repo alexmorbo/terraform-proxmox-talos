@@ -41,6 +41,10 @@ locals {
     controller_manager_extra_args = var.controller_manager_extra_args
     scheduler_extra_args          = var.scheduler_extra_args
     etcd_extra_args               = var.etcd_extra_args
+
+    allow_scheduling_on_control_planes = var.allow_scheduling_on_control_planes
+    kubelet_extra_config               = var.kubelet_extra_config
+    apply_mode                         = var.apply_mode
   }
 }
 
@@ -81,6 +85,10 @@ module "controlplane_talos_config" {
   etcd_extra_args               = local.talos_config_common.etcd_extra_args
   talos_version                 = local.talos_config_common.talos_version
   static_routes                 = local.talos_config_common.static_routes
+
+  allow_scheduling_on_control_planes = local.talos_config_common.allow_scheduling_on_control_planes
+  kubelet_extra_config               = local.talos_config_common.kubelet_extra_config
+  apply_mode                         = local.talos_config_common.apply_mode
 }
 
 module "worker_talos_config" {
@@ -120,6 +128,10 @@ module "worker_talos_config" {
   etcd_extra_args               = local.talos_config_common.etcd_extra_args
   talos_version                 = local.talos_config_common.talos_version
   static_routes                 = local.talos_config_common.static_routes
+
+  allow_scheduling_on_control_planes = local.talos_config_common.allow_scheduling_on_control_planes
+  kubelet_extra_config               = local.talos_config_common.kubelet_extra_config
+  apply_mode                         = local.talos_config_common.apply_mode
 }
 
 data "talos_machine_configuration" "external" {
@@ -148,6 +160,9 @@ data "talos_machine_configuration" "external" {
       has_nvidia         = anytrue([for cap in each.value.capabilities : can(regex("nvidia", cap))])
       install_disk       = each.value.install_disk
       install_wipe       = each.value.install_wipe
+
+      allow_scheduling_on_control_planes = var.allow_scheduling_on_control_planes
+      kubelet_extra_config               = var.kubelet_extra_config
 
       api_server_extra_args         = var.api_server_extra_args
       controller_manager_extra_args = var.controller_manager_extra_args
@@ -188,7 +203,7 @@ resource "talos_machine_configuration_apply" "external" {
   client_configuration        = data.talos_client_configuration.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.external[each.key].machine_configuration
   node                        = each.value.networks[0].address
-  # apply_mode                  = "reboot"
+  apply_mode                  = var.apply_mode
 
   on_destroy = {
     graceful = true

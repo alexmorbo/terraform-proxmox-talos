@@ -231,6 +231,8 @@ locals {
               datastore          = local.datastores_per_node[node_key]
               startup            = cp_config.startup
               kubernetes_version = local.kubernetes_version
+
+              kubelet_extra_config = cp_config.kubelet_extra_config
             }
           }
         ]
@@ -258,6 +260,8 @@ locals {
               datastore          = local.datastores_per_node[node_key]
               startup            = cp_config.startup
               kubernetes_version = local.kubernetes_version_update
+
+              kubelet_extra_config = cp_config.kubelet_extra_config
             }
           }
         ]
@@ -288,6 +292,8 @@ locals {
                 target_node        = node_key
                 datastore          = coalesce(worker_config.datastore, local.datastores_per_node[node_key])
                 kubernetes_version = coalesce(lookup(worker_config, "kubernetes_version", null), local.kubernetes_version)
+
+                kubelet_extra_config = worker_config.kubelet_extra_config
               }
             }
           ]
@@ -323,6 +329,8 @@ locals {
                 target_node        = node_key
                 datastore          = coalesce(worker_config.datastore, local.datastores_per_node[node_key])
                 kubernetes_version = coalesce(lookup(worker_config, "kubernetes_version", null), local.kubernetes_version_update)
+
+                kubelet_extra_config = worker_config.kubelet_extra_config
               }
             }
           ]

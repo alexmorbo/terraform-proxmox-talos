@@ -29,6 +29,9 @@ variable "nodes" {
     min_memory        = optional(number, null)
     sysctls           = optional(map(string), {})
     extra_kernel_args = optional(list(string), [])
+
+    kubelet_extra_config = optional(string)
+
     networks = list(object({
       interface     = string
       bridge        = string

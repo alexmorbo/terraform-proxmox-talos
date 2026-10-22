@@ -188,6 +188,127 @@ workers = {
 }
 ```
 
+## Upgrading to v0.6.0
+
+v0.6.0 requires provider `siderolabs/talos` >= 0.10.1. If your lock file
+pins 0.10.0, run `terraform init -upgrade`.
+
+### `allow_scheduling_on_control_planes` now defaults to `false`
+
+Up to v0.5.0 every node was rendered with
+`cluster.allowSchedulingOnControlPlanes: true`, so ordinary workloads
+landed on control plane nodes. v0.6.0 makes it an input and defaults it
+to `false`. To keep the old behaviour, set it explicitly:
+
+```hcl
+allow_scheduling_on_control_planes = true
+```
+
+A cluster without workers must set it to `true`, otherwise workloads
+have nowhere to run once their pods are restarted.
+
+What `false` does on the next apply:
+
+- The field lives in the `cluster` section, which is rendered on every
+  node, so the plan shows an in-place update of
+  `talos_machine_configuration_apply` for every node, workers included.
+  Talos applies it without a reboot.
+- On control planes the kubelet restarts once (no reboot) and Talos adds
+  the `node-role.kubernetes.io/control-plane:NoSchedule` taint. Pods
+  already running there stay until they are restarted or evicted; new
+  pods without a matching toleration no longer schedule onto control
+  planes.
+- DaemonSet pods without a toleration for that taint keep running but
+  count as misscheduled, which fires `KubeDaemonSetMisScheduled` and
+  `KubeDaemonSetRolloutStuck`, and the next rollout of the DaemonSet
+  removes them from control planes for good. One example is the node
+  plugin of proxmox-csi. List such DaemonSets before upgrading (the list
+  also includes DaemonSets that never run on control planes):
+
+  ```sh
+  kubectl get ds -A -o json | jq -r '.items[]
+    | select([.spec.template.spec.tolerations[]?
+        | select((.operator == "Exists" and (.key // "") == "")
+                 or .key == "node-role.kubernetes.io/control-plane")] | length == 0)
+    | "\(.metadata.namespace)/\(.metadata.name)"'
+  ```
+
+  Either add the toleration or accept that these pods leave control
+  planes.
+
+Talos 1.14 marks `cluster.allowSchedulingOnControlPlanes` as deprecated
+in favour of the `KubeNodeConfig` document. The field still works there:
+Talos maps it to the control plane taint through a compatibility shim.
+
+### `kubelet_extra_config`
+
+KubeletConfiguration fields rendered into `machine.kubelet.extraConfig`.
+The global value is a map. A control plane or worker group may set its
+own `kubelet_extra_config` as a YAML (or JSON) string — a string because
+an `any`-typed attribute inside `map(object)` must have the same type in
+every group, which breaks as soon as two groups differ. An empty string
+means unset. The group value is shallow-merged over the global one: a
+key set on the group replaces the global key as a whole (nested maps are
+not merged). When the result is empty, `extraConfig` is not rendered at
+all, so existing machine configs do not change. Changing the value
+restarts the kubelet on the affected nodes, without a reboot.
+
+`external_worker_nodes` have no group-level field and get only the
+global `kubelet_extra_config`.
+
+```hcl
+kubelet_extra_config = {
+  evictionSoft            = { "memory.available" = "15%" }
+  evictionSoftGracePeriod = { "memory.available" = "1m30s" }
+}
+
+workers = {
+  node-1 = {
+    media = {
+      count = 1
+      # replaces the global evictionSoft entirely, keeps evictionSoftGracePeriod
+      kubelet_extra_config = <<-EOT
+        evictionSoft:
+          memory.available: "10%"
+        maxPods: 150
+      EOT
+      # ...
+    }
+  }
+}
+```
+
+In a module block `yamlencode({ ... })` works as well; `.tfvars` files
+do not allow function calls, so use a heredoc or a JSON string there.
+
+### `apply_mode`
+
+`apply_mode` is passed to every `talos_machine_configuration_apply`
+(Proxmox VMs and external nodes), on create as well as on update. The
+default `auto` is what the provider used before, so nothing changes
+unless it is set. To keep config changes that need a reboot from
+rebooting nodes, stage them instead:
+
+```hcl
+apply_mode = "staged_if_needing_reboot"
+```
+
+Only `auto` and `staged_if_needing_reboot` are accepted. The provider's
+`reboot`, `no_reboot` and `staged` fail, depending on the Talos version,
+either when a new node is created in maintenance mode or on every
+update.
+
+- `staged_if_needing_reboot` runs a dry-run at plan time. If the dry-run
+  fails (node unreachable, TLS error), the provider falls back to `auto`
+  with only a warning, so the node may reboot; check
+  `resolved_apply_mode` in the plan. New nodes have no address at plan
+  time and always get `auto`.
+- Terraform treats a staged config as applied, so the next plan shows no
+  diff. Staged changes take effect on the next reboot
+  (`talosctl reboot --nodes <ip>`).
+- On Talos 1.14 `auto` never reboots, so `staged_if_needing_reboot`
+  behaves like `auto`.
+
 ## Module Structure
 
 - `modules/node_group/` – reusable logic for control plane and worker nodes
@@ -210,7 +331,7 @@ workers = {
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.8.0 |
 | <a name="requirement_local"></a> [local](#requirement\_local) | >= 2.5.2 |
 | <a name="requirement_proxmox"></a> [proxmox](#requirement\_proxmox) | >= 0.111.0, < 1.0.0 |
-| <a name="requirement_talos"></a> [talos](#requirement\_talos) | >= 0.10.0, < 0.11.0 |
+| <a name="requirement_talos"></a> [talos](#requirement\_talos) | >= 0.10.1, < 0.11.0 |
 
 ## Providers
 
@@ -249,12 +370,14 @@ workers = {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_allow_scheduling_on_control_planes"></a> [allow\_scheduling\_on\_control\_planes](#input\_allow\_scheduling\_on\_control\_planes) | Renders cluster.allowSchedulingOnControlPlanes. When false, Talos keeps the node-role.kubernetes.io/control-plane:NoSchedule taint on control plane nodes. | `bool` | `false` | no |
 | <a name="input_api_server_extra_args"></a> [api\_server\_extra\_args](#input\_api\_server\_extra\_args) | Flags appended to cluster.apiServer.extraArgs. Talos denies a number of flags for this component, among them tls-cert-file and the *-kubeconfig family. | `map(string)` | `{}` | no |
+| <a name="input_apply_mode"></a> [apply\_mode](#input\_apply\_mode) | apply\_mode of talos\_machine\_configuration\_apply for all nodes, on create as well as on update. `staged_if_needing_reboot` stages the config instead of rebooting when a reboot would be required. The provider's `reboot`, `no_reboot` and `staged` are not accepted: depending on the Talos version they fail on nodes booted in maintenance mode or on every update. | `string` | `"auto"` | no |
 | <a name="input_cilium_values"></a> [cilium\_values](#input\_cilium\_values) | A map of configuration values for Cilium, used to customize its deployment and behavior in the Kubernetes cluster. | `any` | <pre>{<br/>  "cgroup": {<br/>    "autoMount": {<br/>      "enabled": false<br/>    },<br/>    "hostRoot": "/sys/fs/cgroup"<br/>  },<br/>  "externalIPs": {<br/>    "enabled": true<br/>  },<br/>  "hubble": {<br/>    "tls": {<br/>      "auto": {<br/>        "method": "cronJob"<br/>      }<br/>    }<br/>  },<br/>  "ipam": {<br/>    "mode": "kubernetes"<br/>  },<br/>  "k8sClientRateLimit": {<br/>    "burst": 100,<br/>    "qps": 50<br/>  },<br/>  "k8sServiceHost": "localhost",<br/>  "k8sServicePort": 7445,<br/>  "kubeProxyReplacement": true,<br/>  "l2announcements": {<br/>    "enabled": true<br/>  },<br/>  "operator": {<br/>    "replicas": 1<br/>  },<br/>  "rollOutCiliumPods": true,<br/>  "routingMode": "tunnel",<br/>  "securityContext": {<br/>    "capabilities": {<br/>      "ciliumAgent": [<br/>        "CHOWN",<br/>        "KILL",<br/>        "NET_ADMIN",<br/>        "NET_RAW",<br/>        "IPC_LOCK",<br/>        "SYS_ADMIN",<br/>        "SYS_RESOURCE",<br/>        "DAC_OVERRIDE",<br/>        "FOWNER",<br/>        "SETGID",<br/>        "SETUID"<br/>      ],<br/>      "cleanCiliumState": [<br/>        "NET_ADMIN",<br/>        "SYS_ADMIN",<br/>        "SYS_RESOURCE"<br/>      ]<br/>    }<br/>  },<br/>  "tunnelProtocol": "vxlan"<br/>}</pre> | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | The name of the Talos cluster. | `string` | n/a | yes |
 | <a name="input_cluster_vip"></a> [cluster\_vip](#input\_cluster\_vip) | The virtual IP (VIP) address for the cluster, typically used for load balancing or high availability setups. | `string` | n/a | yes |
 | <a name="input_controller_manager_extra_args"></a> [controller\_manager\_extra\_args](#input\_controller\_manager\_extra\_args) | Flags appended to cluster.controllerManager.extraArgs. Talos binds the component to 127.0.0.1 to keep its metrics off the network; `bind-address = "0.0.0.0"` exposes them on :10257 over HTTPS, where /metrics still requires a bearer token. | `map(string)` | `{}` | no |
-| <a name="input_controlplanes"></a> [controlplanes](#input\_controlplanes) | Configuration of control plane nodes, including the number of nodes, resources (CPU, RAM), and network configuration. | <pre>map(object({<br/>    count           = number<br/>    socket          = optional(number, 1)<br/>    cpu             = optional(number, 4)<br/>    ram             = optional(number, 8192)<br/>    balloon_enabled = optional(bool, false)<br/>    min_memory      = optional(number, null)<br/>    sysctls         = optional(map(string), {})<br/>    networks = list(object({<br/>      interface     = string<br/>      bridge        = string<br/>      tag           = optional(number, null)<br/>      model         = optional(string, "virtio")<br/>      address       = optional(string, null)<br/>      dhcp_disabled = optional(bool, false)<br/>    }))<br/>    kubernetes_version = optional(string)<br/>    startup = optional(object({<br/>      order      = number<br/>      down_delay = number<br/>      up_delay   = number<br/>    }), null)<br/>  }))</pre> | n/a | yes |
+| <a name="input_controlplanes"></a> [controlplanes](#input\_controlplanes) | Configuration of control plane nodes, including the number of nodes, resources (CPU, RAM), and network configuration. `kubelet_extra_config` is a YAML (or JSON) mapping shallow-merged over var.kubelet\_extra\_config for these nodes. | <pre>map(object({<br/>    count           = number<br/>    socket          = optional(number, 1)<br/>    cpu             = optional(number, 4)<br/>    ram             = optional(number, 8192)<br/>    balloon_enabled = optional(bool, false)<br/>    min_memory      = optional(number, null)<br/>    sysctls         = optional(map(string), {})<br/>    networks = list(object({<br/>      interface     = string<br/>      bridge        = string<br/>      tag           = optional(number, null)<br/>      model         = optional(string, "virtio")<br/>      address       = optional(string, null)<br/>      dhcp_disabled = optional(bool, false)<br/>    }))<br/>    kubernetes_version   = optional(string)<br/>    kubelet_extra_config = optional(string)<br/>    startup = optional(object({<br/>      order      = number<br/>      down_delay = number<br/>      up_delay   = number<br/>    }), null)<br/>  }))</pre> | n/a | yes |
 | <a name="input_create_kubeconfig_file"></a> [create\_kubeconfig\_file](#input\_create\_kubeconfig\_file) | Flag to determine whether a local kubernetes configuration file should be created. If set to true, a local\_file resource will be generated with the appropriate content. | `bool` | `false` | no |
 | <a name="input_create_talosconfig_file"></a> [create\_talosconfig\_file](#input\_create\_talosconfig\_file) | Flag to determine whether a local Talos configuration file should be created. If set to true, a local\_file resource will be generated with the appropriate content. | `bool` | `false` | no |
 | <a name="input_default_gateway"></a> [default\_gateway](#input\_default\_gateway) | The default gateway for the cluster nodes, used for routing external traffic. | `string` | n/a | yes |
@@ -262,6 +385,7 @@ workers = {
 | <a name="input_etcd_extra_args"></a> [etcd\_extra\_args](#input\_etcd\_extra\_args) | Flags appended to cluster.etcd.extraArgs, control plane only. `listen-metrics-urls = "http://0.0.0.0:2381"` exposes etcd metrics — over plain HTTP with no authentication, reachable from anywhere that can route to the node. | `map(string)` | `{}` | no |
 | <a name="input_external_worker_nodes"></a> [external\_worker\_nodes](#input\_external\_worker\_nodes) | n/a | <pre>map(object({<br/>    node_group           = string<br/>    architecture         = optional(string, "amd64")<br/>    talos_version        = optional(string)<br/>    talos_version_update = optional(string)<br/>    kubernetes_version   = optional(string)<br/>    sysctls              = optional(map(string), {})<br/>    ipv4_addresses       = optional(string, null)<br/>    capabilities         = optional(list(string), [])<br/>    enable_taints        = optional(bool, true)<br/>    install_disk         = optional(string, "/dev/sda")<br/>    install_wipe         = optional(bool, true)<br/>    networks = optional(list(object({<br/>      bridge        = string<br/>      tag           = number<br/>      interface     = string<br/>      model         = optional(string, "virtio")<br/>      address       = optional(string, null)<br/>      subnet        = optional(string, null) # CIDR subnet for this network (e.g., "10.90.11.0/24")<br/>      gateway       = optional(string, null) # Default gateway for this network<br/>      dhcp_disabled = optional(bool, false)<br/>    })), [])<br/>  }))</pre> | `null` | no |
 | <a name="input_kubeconfig_file_template"></a> [kubeconfig\_file\_template](#input\_kubeconfig\_file\_template) | Template path for the kubeconfig file, where '\_\_CLUSTER\_\_' will be replaced by the cluster name. | `string` | `"~/.kube/configs/__CLUSTER__.yaml"` | no |
+| <a name="input_kubelet_extra_config"></a> [kubelet\_extra\_config](#input\_kubelet\_extra\_config) | KubeletConfiguration fields rendered into machine.kubelet.extraConfig on every node. A group-level kubelet\_extra\_config is shallow-merged over it: a key set on the group replaces the global key as a whole. Nothing is rendered when the result is empty. | `any` | `{}` | no |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | The desired version of Kubernetes to be installed in the cluster. | `string` | `"1.33.0"` | no |
 | <a name="input_kubernetes_version_update"></a> [kubernetes\_version\_update](#input\_kubernetes\_version\_update) | Optional: The Kubernetes version for updated nodes. Falls back to kubernetes\_version if not specified. | `string` | `null` | no |
 | <a name="input_machine_features"></a> [machine\_features](#input\_machine\_features) | Additional machine.features as HCL object to be applied to all nodes. | `map(any)` | `{}` | no |
@@ -281,7 +405,7 @@ workers = {
 | <a name="input_talos_schematic_update"></a> [talos\_schematic\_update](#input\_talos\_schematic\_update) | Optional: A set of Talos extensions for updated nodes. Falls back to talos\_schematic if not specified. | `set(string)` | `null` | no |
 | <a name="input_talosconfig_file_name"></a> [talosconfig\_file\_name](#input\_talosconfig\_file\_name) | The path and filename for the generated Talos configuration file. Defaults to ~/.talos/config. | `string` | `"~/.talos/config"` | no |
 | <a name="input_vm_subnet"></a> [vm\_subnet](#input\_vm\_subnet) | The subnet for the virtual machines in the cluster. | `string` | n/a | yes |
-| <a name="input_workers"></a> [workers](#input\_workers) | Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details. | <pre>map(map(object({<br/>    count                  = number<br/>    datastore              = optional(string, null)<br/>    node_group             = optional(string)<br/>    talos_version          = optional(string)<br/>    talos_version_update   = optional(string)<br/>    talos_schematic        = optional(set(string), null)<br/>    talos_schematic_update = optional(set(string), null)<br/>    kubernetes_version     = optional(string)<br/>    socket                 = optional(number, 1)<br/>    cpu                    = optional(number, 4)<br/>    ram                    = optional(number, 8192)<br/>    balloon_enabled        = optional(bool, false)<br/>    min_memory             = optional(number, null)<br/>    sysctls                = optional(map(string), {})<br/>    extra_kernel_args      = optional(list(string), [])<br/>    networks = list(object({<br/>      bridge        = string<br/>      tag           = optional(number, null)<br/>      interface     = string<br/>      model         = optional(string, "virtio")<br/>      address       = optional(string, null)<br/>      dhcp_disabled = optional(bool, false)<br/>    }))<br/>    pci_passthrough = optional(list(object({<br/>      id      = optional(string)<br/>      mapping = optional(string)<br/>      pcie    = optional(bool, true)<br/>      rombar  = optional(bool, true)<br/>      xvga    = optional(bool, false)<br/>    })))<br/>    startup = optional(object({<br/>      order      = number<br/>      down_delay = number<br/>      up_delay   = number<br/>    }), null)<br/>  })))</pre> | `{}` | no |
+| <a name="input_workers"></a> [workers](#input\_workers) | Configuration of worker nodes, with the ability to specify the number of nodes, Talos version, Kubernetes version, and network details. `kubelet_extra_config` is a YAML (or JSON) mapping shallow-merged over var.kubelet\_extra\_config for the group. | <pre>map(map(object({<br/>    count                  = number<br/>    datastore              = optional(string, null)<br/>    node_group             = optional(string)<br/>    talos_version          = optional(string)<br/>    talos_version_update   = optional(string)<br/>    talos_schematic        = optional(set(string), null)<br/>    talos_schematic_update = optional(set(string), null)<br/>    kubernetes_version     = optional(string)<br/>    socket                 = optional(number, 1)<br/>    cpu                    = optional(number, 4)<br/>    ram                    = optional(number, 8192)<br/>    balloon_enabled        = optional(bool, false)<br/>    min_memory             = optional(number, null)<br/>    sysctls                = optional(map(string), {})<br/>    extra_kernel_args      = optional(list(string), [])<br/>    kubelet_extra_config   = optional(string)<br/>    networks = list(object({<br/>      bridge        = string<br/>      tag           = optional(number, null)<br/>      interface     = string<br/>      model         = optional(string, "virtio")<br/>      address       = optional(string, null)<br/>      dhcp_disabled = optional(bool, false)<br/>    }))<br/>    pci_passthrough = optional(list(object({<br/>      id      = optional(string)<br/>      mapping = optional(string)<br/>      pcie    = optional(bool, true)<br/>      rombar  = optional(bool, true)<br/>      xvga    = optional(bool, false)<br/>    })))<br/>    startup = optional(object({<br/>      order      = number<br/>      down_delay = number<br/>      up_delay   = number<br/>    }), null)<br/>  })))</pre> | `{}` | no |
 
 ## Outputs
 
